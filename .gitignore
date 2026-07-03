@@ -1,0 +1,67 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# 가상환경
+venv/
+env/
+.venv/
+
+# 로컬 설정 (비밀값 포함 위험 — 예시 파일만 커밋)
+config.yaml
+.env
+.env.*
+!.env.example
+
+# 토큰 캐시 (액세스 토큰 평문 — 절대 커밋 금지)
+# examples(dbsec_helper) 와 SDK(auth) 가 저장소 루트의 .dbsec_token.json 하나를 공유.
+.dbsec_token.json
+# 레거시·스크래치 토큰 캐시/사이드카 (모드별 .dbsec_token_<mode>.json, examples/.token.json, .token_demo.json 등)
+# ※ gitignore 는 인라인 주석을 지원하지 않으므로 패턴과 주석을 같은 줄에 두지 말 것
+.dbsec_token_*.json
+.token.json
+.token_*.json
+
+# IDE / 에디터
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# 로그 / 임시
+*.log
+*.tmp
+tmp/
+
+# Claude Code 설정 (로컬 전용 — 공유 대상 아님)
+.claude/
+
+# 검증 작업물 (로컬 전용)
+docs/spec_verification_report.md
+docs/runtime_verification_report.md
+
+# 내부 코딩 컨벤션·빌더 워크플로우 문서 
+docs/convention.md
+
+# 명세 임시 산출물(로컬 전용)
+_specs/
+
+# SDK 모듈 생성 작업 디렉토리 
+_workspace/
+
+# 테스트      
+
+tests/
+
+# 웹 API 테스터 (로컬 전용 도구)
+web_test/

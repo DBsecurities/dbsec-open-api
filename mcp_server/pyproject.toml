@@ -1,0 +1,21 @@
+# DB증권 Open API 코드 어시스턴트 MCP 서버
+#
+# 이 서버는 패키지로 설치하지 않고 진입 스크립트(run_server.py)로 직접 실행합니다.
+#   python /절대경로/dbsec-open-api/mcp_server/run_server.py
+# 의존성 설치는 requirements.txt 를 사용합니다.
+#   pip install -r mcp_server/requirements.txt
+#
+# 아래 [project] 는 메타데이터·의존성 명세 용도입니다.
+
+[project]
+name = "dbsec-open-api-mcp"
+version = "0.1.0"
+description = "DB증권 Open API 코드 어시스턴트 MCP 서버 (그룹/명세/샘플코드 조회)"
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+dependencies = [
+    "mcp>=1.0",
+    "requests>=2.31.0",
+    "pyyaml>=6.0.0",
+]

@@ -1,0 +1,58 @@
+"""[실시간]해외선물시세 [K01] — standalone WebSocket 예제.
+
+그룹: 해외선물옵션시세(실시간)
+프로토콜: WebSocket (실시간)
+가이드: https://openapi.dbsec.co.kr/apiservice?group_id=f1819725-95e6-4445-ad7f-aa1908b20b03&api_id=80f69aed-a8a9-4c96-bbfc-070b1946b41a
+
+해외선물 실시간 시세(체결가) API 입니다. ※ 해외선물옵션 API시세 신청이 되어있지 않은 경우 실시간 시세를 수신 하실 수 없습니다. ※ API시세(유료) 신청방법 GTS(Happy+ Global) : [1761] API시세 신청 ※ 해외선물옵션 가이드는 다음 주소에서 확인 가능하십니다. http://link.dbsec.co.kr/gts/ebook/index.html#page=1 ※ GTS 다운로드는 다음 링크 확인 부탁드리겠습니다. https://www.dbsec.co.kr/research/osf...
+
+토큰은 examples/dbsec_helper.py 가 자동 확보합니다.
+필요한 외부 패키지: requests, pyyaml, websockets
+
+실행:
+    # examples/ 폴더에서 실행하는 경우:
+    python ov_futopt_realtime/ov_futopt_realtime_future_quote.py
+    # examples/ov_futopt_realtime/ 폴더에서 실행하는 경우:
+    python ov_futopt_realtime_future_quote.py
+
+── 응답 파라미터 (Out) ─ OUT_BEGIN ──────────────────────
+  [TR K01]
+    PrTp  (문자)  상품코드
+    AvTp  (문자)  선옵구분 — F:Future O:Option
+    Code  (문자)  종목코드
+    Pind  (문자)  price indicator
+    CCol  (문자)  현재가컬러 — 1:red, 2:blue, 3:black
+    Last  (문자)  현재가
+    Sign  (문자)  등락부호 — +/-
+    Diff  (문자)  대비
+    Rate  (문자)  대비율%
+    VCol  (문자)  직전체결량컬러
+    LVol  (문자)  직전체결량
+    TVol  (문자)  누적거래량
+    Open  (문자)  시가
+    High  (문자)  고가
+    LowP  (문자)  저가
+    TdTm  (문자)  체결시간
+    TDay  (문자)  체결일자
+    BDay  (문자)  영업일
+    Seqn  (문자)  sequence — 1분동안체결순번
+    BidN  (문자)  매도호가건수
+    AskN  (문자)  매수호가건수
+    Amnt  (문자)  체결금액
+
+  공통: rsp_cd  응답코드  ·  rsp_msg  응답메시지
+── OUT_END ──────────────────────────────────────────────
+"""
+
+
+import sys, pathlib
+sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
+
+from dbsec_helper import ws_subscribe, run_ws
+
+run_ws(ws_subscribe(
+    tr_type="1",  # 등록 종류 (1=시세구독 2=해제 3=계좌등록): 시세구독
+    tr_cd="K01",  # 거래코드 (str) - 입력X
+    tr_key="MESU26",  # 종목코드 (str) - 해외선물옵션 종목코드 입력
+    group_slug="ov_futopt_realtime",
+))

@@ -1,0 +1,26 @@
+auth:
+  # 홈페이지에서 API 서비스 신청 시 받은 Appkey, Appsecret 값 설정
+
+  # 실전투자
+  prd_app_key:    "앱키"
+  prd_app_secret: "앱키 시크릿"
+
+  # 모의투자
+  vtl_app_key:    "모의투자 앱키"
+  vtl_app_secret: "모의투자 앱키 시크릿"
+
+environment:
+  # REST API URL은 운영/모의 동일 (앱 속성으로 내부 분기)
+  base_url: "https://openapi.dbsec.co.kr:8443"
+
+  # WebSocket — 일반 (국내·해외주식·국내선옵·채권 등)
+  ws_production: "wss://openapi.dbsec.co.kr:7070/websocket"
+  ws_demo:       "wss://openapi.dbsec.co.kr:17070/websocket"
+
+  # WebSocket — 해외선물옵션(ov_futopt) 전용 포트 (해외선물옵션의 경우, 모의투자 미지원)
+  ws_production_ov_futopt: "wss://openapi.dbsec.co.kr:7071/websocket"
+
+  # "production" 또는 "demo"
+  # demo       → auth.vtl_app_key / vtl_app_secret 사용 + WebSocket demo 포트
+  # production → auth.prd_app_key / prd_app_secret 사용 + WebSocket production 포트
+  mode: "demo"

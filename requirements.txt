@@ -1,0 +1,8 @@
+# dbsec_sdk 의존성 (pyproject.toml 의 core dependencies 와 동일한 목록).
+# SDK 를 쓸 거면 `pip install -e .` 한 줄이면 충분합니다(이 의존성 + dbsec_sdk 패키지 등록 + pandas).
+# 이 파일은 패키지 등록 없이 의존성만 깔 때 사용합니다(예: examples/ 단독 실행). 개발도구 pytest 는 `pip install -e ".[dev]"`.
+requests>=2.31.0
+websockets>=12.0
+python-dotenv>=1.0.0
+pyyaml>=6.0.0
+pandas>=2.0.0          # resp.to_dataframe() · client_examples(quickstart·노트북) 에서 사용
