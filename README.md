@@ -125,19 +125,24 @@ import asyncio
 from dbsec_sdk import DBSecClient
 
 async def main():
-    async with DBSecClient("config.yaml") as client:
-        # 삼성전자 1주 시장가 매수
-        resp = await client.apis.kr_stock_order.kr_stock_order(
-            IsuNo="A005930",
-            OrdQty=1,
-            OrdPrc=0,
-            BnsTpCode="2",
-            OrdprcPtnCode="03",
-            MgntrnCode="000",
-            LoanDt="00000000",
-            OrdCndiTpCode="0",
-            TrchNo=1)
-        print(f"[{resp.rsp_cd}] 주문번호: {resp.body['Out']['OrdNo']}")
+    # 클라이언트 생성 — 유량제어·토큰 옵션 (모두 기본값이라 생략 가능: DBSecClient("config.yaml") 만으로도 동작)
+    async with DBSecClient(
+        "config.yaml",
+        rate_limit=True,          # 유량제어: 호출 전 앱TPS+API별 TPS 간격을 맞춰 IGW00201(호출초과) 예방. False면 미적용.
+        rate_limit_safety=0.9,    # 안전계수(0<s≤1): 실제율 = 앱 TPS × s. 0.9=90%(10% 여유, 권장. 0.9 적용 시 최대 18TPS)
+        auto_token=True,          # 토큰 자동 발급/재발급: True면 요청 시 토큰이 없거나 만료/무효(IGW00121/123)면 자동 처리.
+                                  # False면 자동 발급 안 함 → 토큰 없으면 AuthError, 만료/무효는 APIError (직접 관리).
+        rate_limit_backoff=True,  # 지수백오프: IGW00201 받으면 1·2·4·8초 후 재시도. False면 즉시 APIError.
+    ) as client:
+        # 국내주식 현재가조회 — 삼성전자 (읽기 전용)
+        resp = await client.apis.kr_stock_quote.kr_stock_inquire_price(
+            InputCondMrktDivCode="J",   # J: KRX 주식
+            InputIscd1="005930")        # 삼성전자
+        # 응답 성공(rsp_cd == "00000")을 확인한 뒤 값을 사용한다.
+        if resp.rsp_cd == "00000":
+            print(f"삼성전자 현재가: {int(resp.body['Out']['Prpr']):,}원")
+        else:
+            print(f"[{resp.rsp_cd}] 조회 실패: {resp.rsp_msg}")
 
 asyncio.run(main())
 ```
