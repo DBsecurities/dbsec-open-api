@@ -49,6 +49,7 @@
 - 접근토큰 유효기간은 **24시간**이며, 유효기간 내 발급 시 **동일 토큰**이 발급됩니다. 유효기간 내 토큰 재발급을 원하시면 기존토큰 폐기 후 발급 바랍니다. 
 - TR코드별 InBlock/OutBlock 세부사항은 [DB증권 API 가이드](https://openapi.dbsec.co.kr/apiservice) 참조.
 - 해외주식 실시간 시세 수신 시 MTS/HTS를 통해 **실시간 시세 신청(무료)** 이 필요합니다.
+- 해외선물옵션 실시간 시세 수신 시 GMTS/GTS를 통해 **실시간 시세 신청(유료)** 이 필요합니다.
 
 ---
 
@@ -95,7 +96,7 @@
 ## 사전 준비
 
 1. **DB증권 계좌 개설** — [비대면 계좌개설](https://www.dbsec.co.kr/custcenter/account/cu_NonfaceBranch_viw.do)
-2. **Open API 사용 신청** — DB증권 홈페이지 -> OpenAPI 서비스 신청 메뉴(https://www.dbsec.co.kr/online/accservice/on_OpenApi_wrk00.do)에서 신청
+2. **Open API 사용 신청** — DB증권 홈페이지 -> OpenAPI 서비스 신청 메뉴(https://www.dbsec.co.kr/online/accservice/on_OpenApi_wrk00.do) 에서 신청
 3. **APP_KEY / APP_SECRET 발급** — 신청 완료 후 발급
 4. **Python 3.10 이상** 설치
 
