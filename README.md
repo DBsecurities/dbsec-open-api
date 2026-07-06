@@ -111,7 +111,9 @@
 git clone https://github.com/DBsecurities/dbsec-open-api.git
 cd dbsec-open-api
 pip install -e .                            # dbsec_sdk + 의존성(requests·pyyaml·websockets·pandas) 일괄 설치 — standalone 예제도 이걸로 동작
-cp config.yaml.example config.yaml          # APP_KEY/SECRET 입력 + mode: demo
+cp config.yaml.example config.yaml          # APP_KEY/SECRET 입력 + mode: demo  (macOS/Linux/Git Bash)
+# Windows CMD:        copy config.yaml.example config.yaml
+# Windows PowerShell: Copy-Item config.yaml.example config.yaml
 python dbsec_sdk/client_examples/quickstart.py   # SDK 데모 (읽기 전용 조회)
 # 또는 단발 standalone 예제(examples/dbsec_helper.py 사용): python examples/kr_stock_quote/kr_stock_inquire_price.py
 ```
@@ -151,7 +153,9 @@ asyncio.run(main())
 ### 실행
 
 ```bash
-cp config.yaml.example config.yaml      # 앱키 입력 + mode: demo (최초 1회)
+cp config.yaml.example config.yaml      # 앱키 입력 + mode: demo (최초 1회, macOS/Linux/Git Bash)
+# Windows CMD:        copy config.yaml.example config.yaml
+# Windows PowerShell: Copy-Item config.yaml.example config.yaml
 
 # 저장소 루트에서:
 python examples/kr_stock_quote/kr_stock_inquire_price.py
@@ -335,7 +339,9 @@ uv pip install -e .
 ### 1. 설정 파일 생성
 
 ```bash
-cp config.yaml.example config.yaml
+cp config.yaml.example config.yaml          # macOS / Linux / Git Bash
+# Windows CMD:        copy config.yaml.example config.yaml
+# Windows PowerShell: Copy-Item config.yaml.example config.yaml
 ```
 
 ### 2. `config.yaml` 수정
