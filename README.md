@@ -98,7 +98,8 @@
 1. **DB증권 계좌 개설** — [비대면 계좌개설](https://www.dbsec.co.kr/custcenter/account/cu_NonfaceBranch_viw.do)
 2. **Open API 사용 신청** — DB증권 홈페이지 -> OpenAPI 서비스 신청 메뉴(https://www.dbsec.co.kr/online/accservice/on_OpenApi_wrk00.do) 에서 신청
 3. **APP_KEY / APP_SECRET 발급** — 신청 완료 후 발급
-4. **Python 3.10 이상** 설치
+4. 모의투자 OpenAPI 앱 신청 전 **모의투자 신청** 필수 — DB증권 홈페이지 -> 모의투자 -> 상시모의투자 신청 메뉴(https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do) 에서 신청 
+5. **Python 3.10 이상** 설치
 
 ---
 
@@ -125,11 +126,15 @@ async def main():
     async with DBSecClient("config.yaml") as client:
         # 삼성전자 1주 시장가 매수
         resp = await client.apis.kr_stock_order.kr_stock_order(
-            IsuNo="A005930", OrdQty=1, OrdPrc=0,
-            BnsTpCode="2", OrdprcPtnCode="03",
-            MgntrnCode="000", LoanDt="00000000",
-            OrdCndiTpCode="0", TrchNo=1,
-        )
+            IsuNo="A005930",
+            OrdQty=1,
+            OrdPrc=0,
+            BnsTpCode="2",
+            OrdprcPtnCode="03",
+            MgntrnCode="000",
+            LoanDt="00000000",
+            OrdCndiTpCode="0",
+            TrchNo=1)
         print(f"[{resp.rsp_cd}] 주문번호: {resp.body['Out']['OrdNo']}")
 
 asyncio.run(main())
@@ -417,15 +422,19 @@ resp = await client.apis.<group_slug>.<method_name>(
 ```python
 # 단건과 같은 호출 + fetch_all=True (list 블록 Out1/Out2 가 페이지 간 누적됨)
 resp = await client.apis.kr_stock_quote.kr_stock_inquire_condition_rise_fall(
-    InputDateClsCode="0", InputRankSortClsCode1="12",   # 당일 / 상승률
-    InputMrktClsCode="K", InputBstpIscd="1001",          # 코스피
-    fetch_all=True,
-)
+    InputDateClsCode="0",
+    InputRankSortClsCode1="12",  # 당일 / 상승률
+    InputMrktClsCode="K",
+    InputBstpIscd="1001",  # 코스피
+    fetch_all=True)
 df = resp.to_dataframe()          # 전 페이지 누적 결과
 n_pages = len(resp.pages)         # 받은 페이지 수 (원본 페이지는 resp.pages 로 접근)
 
 # 데이터가 매우 많은 조회(예: 틱차트)는 max_pages 로 상한을 둘 수 있음 (기본 None = 끝까지)
-ticks = await client.apis.kr_chart.kr_chart_chart_tick(**tick_args, fetch_all=True, max_pages=10)
+ticks = await client.apis.kr_chart.kr_chart_chart_tick(
+    **tick_args,
+    fetch_all=True,
+    max_pages=10)
 
 # 저수준(raw 경로 직접 호출): post_paged / get_paged → list[APIResponse]
 pages = await client.post_paged("/api/v1/quote/kr-chart/tick", {"In": {...}})
@@ -460,14 +469,18 @@ print(resp.body["Out"]["OrdNo"])
 ```python
 # 정정주문 (CSPAT00700)
 await client.apis.kr_stock_order.kr_stock_order_modify(
-    OrgOrdNo=14404, IsuNo="A005930", OrdQty=5,
-    OrdprcPtnCode="00", OrdCndiTpCode="0", OrdPrc=80000,
-)
+    OrgOrdNo=14404,
+    IsuNo="A005930",
+    OrdQty=5,
+    OrdprcPtnCode="00",
+    OrdCndiTpCode="0",
+    OrdPrc=80000)
 
 # 취소주문 (CSPAT00800)
 await client.apis.kr_stock_order.kr_stock_order_cancel(
-    OrgOrdNo=14414, IsuNo="A005930", OrdQty=10,
-)
+    OrgOrdNo=14414,
+    IsuNo="A005930",
+    OrdQty=10)
 ```
 
 #### 3-3. 잔고 / 체결 / 예수금
@@ -479,17 +492,27 @@ balance, deposit = await asyncio.gather(
     client.apis.kr_stock_order.kr_stock_inquire_deposit(),
 )
 executions  = await client.apis.kr_stock_order.kr_stock_inquire_executions(
-                  SorTpYn="2", ExecYn="0", TrdMktCode="0",
-                  BnsTpCode="0", IsuTpCode="0", QryTp="0")
+    SorTpYn="2",
+    ExecYn="0",
+    TrdMktCode="0",
+    BnsTpCode="0",
+    IsuTpCode="0",
+    QryTp="0")
 psbl_qty    = await client.apis.kr_stock_order.kr_stock_inquire_psbl_quantity(
-                  BnsTpCode="2", IsuNo="A005930", OrdPrc=77000)
+    BnsTpCode="2",
+    IsuNo="A005930",
+    OrdPrc=77000)
 ```
 
 #### 3-4. 시세
 
 ```python
-price       = await client.apis.kr_stock_quote.kr_stock_inquire_price(InputCondMrktDivCode="J", InputIscd1="005930")
-orderbook   = await client.apis.kr_stock_quote.kr_stock_inquire_orderbook(InputCondMrktDivCode="J", InputIscd1="005930")
+price       = await client.apis.kr_stock_quote.kr_stock_inquire_price(
+    InputCondMrktDivCode="J",
+    InputIscd1="005930")
+orderbook   = await client.apis.kr_stock_quote.kr_stock_inquire_orderbook(
+    InputCondMrktDivCode="J",
+    InputIscd1="005930")
 ranks       = await client.apis.kr_stock_quote.kr_stock_inquire_condition_rise_fall(...)
 ```
 
