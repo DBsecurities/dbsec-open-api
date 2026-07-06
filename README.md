@@ -140,7 +140,11 @@ async def main():
             InputIscd1="005930")        # 삼성전자
         # 응답 성공(rsp_cd == "00000")을 확인한 뒤 값을 사용한다.
         if resp.rsp_cd == "00000":
-            print(f"삼성전자 현재가: {int(resp.body['Out']['Prpr']):,}원")
+            out = resp.body["Out"]
+            print(f"삼성전자 현재가: {int(out['Prpr']):,}원\n")
+            # 응답 전체 필드 출력 (DataFrame 으로 보려면 resp.to_dataframe())
+            for field, value in out.items():
+                print(f"  {field}: {value}")
         else:
             print(f"[{resp.rsp_cd}] 조회 실패: {resp.rsp_msg}")
 
