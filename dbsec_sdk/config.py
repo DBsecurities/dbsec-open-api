@@ -113,8 +113,21 @@ class Config:
         """실행 모드. "production"(운영) 또는 "demo"(모의투자).
         이 값은 APP_KEY 선택과 WebSocket 포트 선택에 영향을 미칩니다.
         REST API URL 자체는 mode 와 무관하게 동일합니다.
+
+        Raises:
+            ValueError: "demo"/"production" 이외의 값(오타·대소문자 포함)인 경우.
+                검증 없이 두면 오타 시 REST 는 실전(prd) 앱키로, WebSocket 은 demo 로
+                엇갈려 폴백돼 '모의라고 믿고 실주문'이 나갈 수 있어 명시적으로 차단한다.
         """
-        return self._get("environment", "mode", env="DBSEC_MODE", default="demo")
+        mode = self._get("environment", "mode", env="DBSEC_MODE", default="demo").strip()
+        if mode not in ("demo", "production"):
+            raise ValueError(
+                f"잘못된 mode 값입니다: {mode!r}. "
+                "environment.mode(또는 DBSEC_MODE)는 \"demo\"(모의투자) 또는 "
+                "\"production\"(실전) 이어야 합니다 — 대소문자·오타 주의 "
+                "(예: \"Demo\", \"prod\", \"real\", \"test\" 는 허용되지 않습니다)."
+            )
+        return mode
 
     @property
     def ws_url(self) -> str:

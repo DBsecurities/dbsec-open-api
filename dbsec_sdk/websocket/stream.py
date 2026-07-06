@@ -382,10 +382,13 @@ class DBSecWebSocket:
         if not self._ws:
             raise WebSocketError("WebSocket이 연결되지 않음")
 
+        # 요청 경로 — auto_token 정책을 따른다(없으면 발급 or AuthError). 명시 발급은 get_token().
+        # 동기 토큰 확보(캐시 미스 시 blocking HTTP)를 to_thread 로 오프로드해 이벤트 루프 정지 방지
+        # (구독/재연결 복원 중 다른 태스크가 멈추지 않도록).
+        token = await asyncio.to_thread(self._token_manager._token_for_request)
         msg = json.dumps({
             "header": {
-                # 요청 경로 — auto_token 정책을 따른다(없으면 발급 or AuthError). 명시 발급은 get_token().
-                "token": self._token_manager._token_for_request(),
+                "token": token,
                 "tr_type": tr_type,
             },
             "body": {

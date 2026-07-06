@@ -38,6 +38,10 @@ _TOKEN_CACHE  = _REPO_ROOT / ".dbsec_token.json"
 
 _OV_FUTOPT_PREFIXES = ("ov_futopt",)
 
+# 연속조회(call_rest_paged) 안전 상한: max_pages 미지정이어도 이 페이지 수에서 강제 중단.
+# 서버가 cont_yn='Y' 를 무한 반복하거나 cont_key 가 진행하지 않는 이상 상황의 폭주 방지.
+_PAGED_SAFETY_CAP = 100
+
 # 누락된 environment 키 안내 시 보여줄 예시 값 (config.yaml.example 과 동일)
 # 해외선물옵션(ov_futopt)은 모의투자 미지원으로, 운영/모의 구분 없이 단일 URL 이므로 ws_demo 키는 생략한다.
 _ENV_EXAMPLES = {
@@ -117,7 +121,20 @@ def load_config() -> dict:
         )
     cfg = yaml.safe_load(_CONFIG_PATH.read_text(encoding="utf-8")) or {}
     auth, env = cfg.get("auth", {}), cfg.get("environment", {})
-    mode = env.get("mode", "demo")
+    mode = str(env.get("mode", "demo")).strip()
+    # mode 검증: "demo"/"production" 외(오타·대소문자)면 즉시 차단.
+    # 검증이 없으면 오타(예: "Demo","prod") 시 prefix 가 조용히 "prd"(실전 키)로
+    # 폴백돼 '모의라 믿고 실주문'이 나갈 수 있으므로 명확히 막는다.
+    if mode not in ("demo", "production"):
+        raise ConfigError(
+            "\n┌─ 잘못된 mode 값 ───────────────────────────────────\n"
+            f"│ environment.mode = \"{mode}\" 은(는) 허용되지 않습니다.\n"
+            "│ \"demo\"(모의투자) 또는 \"production\"(실전) 중 하나여야 합니다.\n"
+            "│ (대소문자·오타 주의 — 예: \"Demo\", \"prod\", \"real\" 불가)\n"
+            "│\n"
+            f"│ 파일: {_CONFIG_PATH}\n"
+            "└─────────────────────────────────────────────────────"
+        )
     prefix = "vtl" if mode == "demo" else "prd"   # 모의투자=vtl, 운영=prd
     return {
         "mode":         mode,
@@ -477,10 +494,22 @@ def call_rest_paged(url: str, body: dict | None = None, *,
             if verbose or progress:
                 print(f"\n━ 자동 페이징 종료: 총 {page_no} 페이지 (서버 cont_yn={next_yn!r})")
             return pages
+        # 무진행 가드: cont_yn='Y' 인데 다음 cont_key 가 비었거나 직전과 동일하면
+        # 같은 요청이 무한 반복되므로(서버 이상) 경고 후 중단한다(무한루프 방지).
+        if not next_key or next_key == cur_key:
+            reason = "비어 있음" if not next_key else f"직전과 동일({cur_key!r})"
+            print(f"\n━ 자동 페이징 중단: 서버가 cont_yn='Y' 이나 cont_key 가 {reason} "
+                  f"— 무진행으로 판단(총 {page_no} 페이지)")
+            return pages
         if max_pages is not None and page_no >= max_pages:
             if verbose or progress:
                 print(f"\n━ 자동 페이징 중단: max_pages={max_pages} 상한 도달 "
                       f"(다음 cont_key={next_key!r} 부터 데이터가 더 남음)")
+            return pages
+        # 안전 상한: max_pages 미지정이어도 폭주 방지(더 받으려면 max_pages 지정).
+        if max_pages is None and page_no >= _PAGED_SAFETY_CAP:
+            print(f"\n━ 자동 페이징 중단: 안전 상한 {_PAGED_SAFETY_CAP} 페이지 도달 "
+                  f"(다음 cont_key={next_key!r} 부터 더 있음). 더 받으려면 max_pages 를 지정하세요.")
             return pages
         if verbose:
             print(f"  → 다음 페이지로 이어감  cont_key={next_key!r}")

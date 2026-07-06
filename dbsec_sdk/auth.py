@@ -198,31 +198,40 @@ class TokenManager:
             "client.get_token() 으로 발급하거나, DBSecClient(auto_token=True) 로 설정하세요."
         )
 
-    def force_refresh(self) -> str:
+    def force_refresh(self, invalid_token: str | None = None) -> str:
         """현재 토큰을 폐기(revoke)하고 새 토큰을 발급한다 (강제 갱신, 비인터랙티브).
 
         명시적 갱신 메서드다. auto_token=True 인 경우, client 요청 루프가 토큰거부
-        응답(IGW00121/00123)을 받으면 이 메서드를 호출해 재발급 후 재시도한다.
+        응답(IGW00121/00123)을 받으면 '요청에 사용한(=무효로 판정된) 토큰'을
+        invalid_token 으로 넘겨 이 메서드를 호출한다.
 
         DB증권은 24시간 이내 재발급 시 기존(무효) 토큰을 그대로 반환하므로,
         반드시 revoke 로 서버·캐시의 기존 토큰을 비운 뒤 새로 발급한다.
 
-        Returns:
-            새로 발급된 접근토큰.
+        Args:
+            invalid_token: 호출자가 '무효'로 판정한(그 요청에 실제 사용한) 토큰. 주어지면,
+                락 획득 후 캐시의 현재 토큰이 이 값과 다르면(=다른 스레드가 이미 재발급함)
+                revoke 하지 않고 그 새 토큰을 그대로 반환한다 — 방금 발급된 유효 토큰을
+                실수로 폐기하는 것을 막는다. None(사용자의 명시적 호출)이면 항상 재발급한다.
 
-        동시 호출 안전: 여러 스레드가 같은 무효 토큰으로 동시에 들어오면,
-        먼저 진입한 스레드만 재발급하고 나머지는 갱신된 토큰을 그대로 받는다
-        (불필요한 revoke→재발급 폭주 및 1분 1건 제한 충돌 방지).
+        Returns:
+            새로 발급된(또는 다른 스레드가 이미 재발급한) 접근토큰.
+
+        동시 호출 안전: 여러 스레드가 같은 무효 토큰으로 동시에 들어와도, 락 안에서
+        '무효 토큰(invalid_token) vs 현재 캐시 토큰'을 비교하므로 먼저 진입한 스레드만
+        재발급하고 나머지는 갱신된 토큰을 그대로 받는다 — 불필요한 revoke→재발급 폭주와
+        1분 1건 제한 충돌, 그리고 '방금 발급된 유효 토큰을 폐기'하는 사고를 함께 막는다.
+        (기존 before/after 스냅샷 방식은 스냅샷을 갱신 완료 후에 뜨면 before==after 라
+        새 토큰을 revoke 해버리는 결함이 있었다.)
 
         Raises:
             AuthError: 재발급 실패 시 (예: 1분 1건 제한 IGW00201, 자격증명 오류).
         """
-        before = self._load_cached_token()
         with self._refresh_lock:
-            after = self._load_cached_token()
-            if after and after != before:
-                # 락 대기 중 다른 스레드가 이미 갱신함 → 재발급 생략
-                return after
+            current = self._load_cached_token()
+            if invalid_token is not None and current and current != invalid_token:
+                # 다른 스레드가 이미 새 토큰으로 갱신함 → 재발급 생략(새 토큰 보존)
+                return current
             self.revoke()              # 서버 폐기 + 캐시 삭제 (실패해도 캐시는 삭제됨)
             return self._fetch_token()  # 새 토큰 발급 후 캐시 저장
 

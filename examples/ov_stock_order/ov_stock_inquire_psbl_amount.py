@@ -20,8 +20,8 @@ TPS     : 2
     Out  (오브젝트)  Out
       AstkOrdAbleAmt  (숫자)  해외주식주문가능금액 — 해당통화 기준
       AstkOrdAbleQty  (숫자)  해외주식주문가능수량 — 해당통화 기준
-      AstkOrdAbleAmt0  (숫자)  해외주식주문가능금액0 — 통함증거금 기준
-      AstkOrdAbleQty0  (숫자)  해외주식주문가능수량0 — 통함증거금 기준
+      AstkOrdAbleAmt0  (숫자)  해외주식주문가능금액0 — 통합증거금 기준
+      AstkOrdAbleQty0  (숫자)  해외주식주문가능수량0 — 통합증거금 기준
       AstkOrdAbleAmt1  (숫자)  해외주식주문가능금액1 — 미수금포함 기준
       AstkOrdAbleQty1  (숫자)  해외주식주문가능수량1 — 미수금포함 기준
       CsldtMgnUseYn  (문자)  통합증거금사용여부 — (Y/N)

@@ -70,6 +70,11 @@ _BACKOFF_BASE = 1.0     # 첫 백오프(초). 서버 카운팅 윈도가 1초라
 _BACKOFF_MAX = 8.0      # 백오프 상한(초). 1→2→4→8 후 8 에서 캡.
 _BACKOFF_RETRIES = 4    # 요청당 IGW00201 최대 재시도 횟수(1+2+4+8 ≈ 최악 15s+jitter).
 
+# 연속조회 안전 상한: max_pages 미지정(None)이어도 이 페이지 수에서 강제 중단한다(폭주 방지).
+# 서버가 cont_yn='Y' 를 무한 반복하거나 cont_key 가 진행하지 않는 이상 상황 대비.
+# 이보다 더 받아야 하면 max_pages 를 명시(예: max_pages=500)하면 그 값이 상한이 된다.
+_PAGED_SAFETY_CAP = 100
+
 
 def _normalize_max_pages(max_pages: Any) -> int | None:
     """연속조회 max_pages 입력 정규화.
@@ -145,7 +150,7 @@ class _SyncCore:
         Raises:
             APIError: 복구 불가 오류이거나 재시도 상한을 초과한 경우.
         """
-        url = f"{self.config.base_url}/{path}"
+        url = f"{self.config.base_url}{path if path.startswith('/') else '/' + path}"
 
         token_attempt = 0   # 토큰 무효/만료 복구 카운터
         rate_attempt = 0    # IGW00201 백오프 재시도 카운터 (토큰 카운터와 독립)
@@ -175,8 +180,11 @@ class _SyncCore:
             # 4) 토큰 무효/만료 → auto_token=True 면 재발급 후 재시도 (False 면 그대로 APIError)
             if self._auto_token and rsp_cd in _TOKEN_ERROR_CODES and token_attempt < self._token_retry_limit:
                 token_attempt += 1
+                # 이 요청에 실제로 사용해 거부당한 토큰을 넘긴다 → 동시 호출 시 다른 스레드가
+                # 이미 재발급한 새 토큰을 실수로 revoke 하지 않도록(auth.force_refresh 참고).
+                used_token = headers.get("authorization", "").removeprefix("Bearer ").strip() or None
                 try:
-                    self.token_manager.force_refresh()
+                    self.token_manager.force_refresh(invalid_token=used_token)
                 except Exception:
                     break  # 재발급 실패 → 복구 불가, 원오류 발생
                 continue
@@ -230,8 +238,9 @@ class _SyncCore:
         (dbsec_helper.call_rest_paged 의 page_sleep 같은 수동 지연이 필요 없다).
 
         Args:
-            max_pages: 선택적 상한. 기본 None = 서버가 끝을 알릴 때까지 무제한(helper 동작).
-                정수를 주면 그 페이지 수에서 멈춘다(이때만 경고 로그).
+            max_pages: 선택적 상한. 기본 None = 서버가 끝을 알릴 때까지 받되, 안전 상한
+                100페이지(_PAGED_SAFETY_CAP)에서 강제 중단한다(폭주 방지). 정수를 주면
+                그 페이지 수에서 멈춘다(상한에서 멈추면 경고 로그).
             cont_key: 이전 세션 재개용 시작 연속키 (기본 '' = 처음부터).
 
         Returns:
@@ -248,13 +257,30 @@ class _SyncCore:
             pages.append(resp)
             if not resp.has_more:                 # 서버가 cont_yn != 'Y' → 마지막 페이지
                 return pages
+            # 무진행 가드: has_more=True 인데 다음 cont_key 가 비었거나 직전과 동일하면
+            # 같은 요청이 무한 반복되므로(서버 이상) 경고 후 중단한다.
+            next_key = resp.cont_key
+            if not next_key or next_key == cur_key:
+                logger.warning(
+                    "request_paged: 서버가 cont_yn='Y' 이나 cont_key 가 %s [%s] "
+                    "— 무진행으로 판단해 %d페이지에서 중단(무한루프 방지).",
+                    "비어 있음" if not next_key else f"직전과 동일({cur_key!r})", path, len(pages),
+                )
+                return pages
             if max_pages is not None and len(pages) >= max_pages:
                 logger.warning(
                     "request_paged: max_pages=%d 상한에서 중단 [%s] (cont_key=%r 부터 데이터 남음)",
                     max_pages, path, resp.cont_key,
                 )
                 return pages
-            cur_yn, cur_key = "Y", resp.cont_key
+            # 안전 상한: max_pages 미지정이어도 폭주 방지(더 받으려면 max_pages 명시).
+            if max_pages is None and len(pages) >= _PAGED_SAFETY_CAP:
+                logger.warning(
+                    "request_paged: 안전 상한 %d페이지 도달 [%s] — 중단(cont_key=%r 부터 더 있음). "
+                    "더 받으려면 max_pages 를 명시하세요.", _PAGED_SAFETY_CAP, path, resp.cont_key,
+                )
+                return pages
+            cur_yn, cur_key = "Y", next_key
 
     def post(self, path: str, body: dict | None = None, **kwargs: Any) -> APIResponse:
         return self.request("POST", path, body=body, **kwargs)
@@ -419,8 +445,9 @@ class DBSecClient:
             endpoint: client.apis.<group>.<method> (cont_yn/cont_key 인자를 받는 메서드).
             page_delay: 페이지 사이 추가 지연(초). 기본 0 — 유량제어가 이미 페이싱하므로 보통 불필요.
             start_cont_key: 이전 세션 재개용 시작 연속키 ('' = 처음부터).
-            max_pages: 선택적 상한. 기본 None = 끝까지(helper 동작). 정수를 주면 그 페이지 수에서
-                멈춘다(이때만 마지막 페이지에 데이터가 남을 수 있어 경고 로그를 남긴다).
+            max_pages: 선택적 상한. 기본 None = 끝까지 받되, 안전 상한 100페이지(_PAGED_SAFETY_CAP)
+                에서 강제 중단한다(폭주 방지 — 더 받으려면 정수 명시). 정수를 주면 그 페이지 수에서
+                멈춘다(상한에서 멈추면 마지막 페이지에 데이터가 남을 수 있어 경고 로그를 남긴다).
             **kwargs: 엔드포인트 메서드의 나머지 인자 (cont_yn/cont_key 는 자동 주입).
         """
         kwargs.pop("cont_yn", None)
@@ -433,13 +460,30 @@ class DBSecClient:
             pages.append(resp)
             if not resp.has_more:                 # 서버가 cont_yn != 'Y' → 마지막 페이지
                 break
+            # 무진행 가드: has_more=True 인데 다음 cont_key 가 비었거나 직전과 동일하면
+            # 같은 요청이 무한 반복되므로(서버 이상) 경고 후 중단한다.
+            next_key = resp.cont_key
+            if not next_key or next_key == cur_key:
+                logger.warning(
+                    "fetch_all: 서버가 cont_yn='Y' 이나 cont_key 가 %s "
+                    "— 무진행으로 판단해 %d페이지에서 중단(무한루프 방지).",
+                    "비어 있음" if not next_key else f"직전과 동일({cur_key!r})", len(pages),
+                )
+                break
             if max_pages is not None and len(pages) >= max_pages:
                 logger.warning(
                     "fetch_all: max_pages=%d 상한에서 중단 — cont_key=%r 부터 데이터가 더 남음",
                     max_pages, resp.cont_key,
                 )
                 break
-            cur_yn, cur_key = "Y", resp.cont_key
+            # 안전 상한: max_pages 미지정이어도 폭주 방지(더 받으려면 max_pages 명시).
+            if max_pages is None and len(pages) >= _PAGED_SAFETY_CAP:
+                logger.warning(
+                    "fetch_all: 안전 상한 %d페이지 도달 — 중단(cont_key=%r 부터 더 있음). "
+                    "더 받으려면 max_pages 를 명시하세요.", _PAGED_SAFETY_CAP, resp.cont_key,
+                )
+                break
+            cur_yn, cur_key = "Y", next_key
             if page_delay:
                 await asyncio.sleep(page_delay)
         return APIResponse.merge(pages)

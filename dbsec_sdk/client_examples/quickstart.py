@@ -72,31 +72,47 @@ async def main():
     # 4) 분차트조회 — 삼성전자 10분봉
     show("분차트조회",
          await client.apis.kr_chart.kr_chart_chart_min(
-             InputCondMrktDivCode="J", InputIscd1="005930", InputDate1="20260526",
-             InputDivXtick="600", dataCnt="5", InputOrgAdjPrc="1"))
+             InputCondMrktDivCode="J",
+             InputIscd1="005930",
+             InputDate1="20260526",
+             InputDivXtick="600",
+             dataCnt="5",
+             InputOrgAdjPrc="1"))
 
     # 5) 멀티현재가조회 — 5종목
     show("멀티현재가조회",
          await client.apis.kr_stock_quote.kr_stock_inquire_price_multi(
              dataCnt=5,
-             InputCondMrktDivCode1="J", InputIscd1="005930",
-             InputCondMrktDivCode2="J", InputIscd2="000660",
-             InputCondMrktDivCode3="J", InputIscd3="035720",
-             InputCondMrktDivCode4="J", InputIscd4="005380",
-             InputCondMrktDivCode5="U", InputIscd5="1001"))
+             InputCondMrktDivCode1="J",
+             InputIscd1="005930",
+             InputCondMrktDivCode2="J",
+             InputIscd2="000660",
+             InputCondMrktDivCode3="J",
+             InputIscd3="035720",
+             InputCondMrktDivCode4="J",
+             InputIscd4="005380",
+             InputCondMrktDivCode5="U",
+             InputIscd5="1001"))
 
     # 6) 주식조건상승하락조회 — 전일 상승률 상위
     show("주식조건상승하락조회",
          await client.apis.kr_stock_quote.kr_stock_inquire_condition_rise_fall(
-             InputDateClsCode="1", InputRankSortClsCode1="12",
-             InputMrktClsCode="A", InputBstpIscd=""))
+             InputDateClsCode="1",
+             InputRankSortClsCode1="12",
+             InputMrktClsCode="A",
+             InputBstpIscd=""))
 
     # 7) 해외주식 상승하락조회 — 미국 상승률 상위(거래량 100만주↑)
     show("해외주식 상승하락조회",
          await client.apis.ov_stock_quote.ov_stock_inquire_condition_rise_fall(
-             InputRealDelayClsCode="1", InputDataCode="US", InputDateClsCode="0",
-             InputRankSortClsCode1="249", InputVolClsCode="9",
-             InputTrPbmn1="", InputDprice1="", InputDprice2=""))
+             InputRealDelayClsCode="1",
+             InputDataCode="US",
+             InputDateClsCode="0",
+             InputRankSortClsCode1="249",
+             InputVolClsCode="9",
+             InputTrPbmn1="",
+             InputDprice1="",
+             InputDprice2=""))
 
     # ── 토큰 폐기 (revoke) ────────────────────────────────────────
     # 모든 조회(1~7)를 마쳤으니 토큰을 명시적으로 폐기 — 서버에서 무효화하고

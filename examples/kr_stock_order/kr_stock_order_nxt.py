@@ -33,7 +33,9 @@ NXT거래소 전용 국내주식 주문 API 입니다.
 """
 
 # ⚠️  경고: 실제 매매가 실행될 수 있는 주문 API입니다.
-#        반드시 모의투자 환경(mode='demo')에서 먼저 테스트하세요.
+#        NXT 주문은 모의투자 미지원(실전 전용 — docs/api_support_matrix.md ❌)이라
+#        demo 로 사전 검증할 수 없습니다. 최소 수량·시간외(시세 닫힌 시간대) 호출 등으로
+#        충분히 점검한 뒤 실전(mode='production')에서 사용하세요.
 import sys, pathlib
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parents[1]))
 

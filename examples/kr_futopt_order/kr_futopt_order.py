@@ -43,7 +43,7 @@ resp, data = call_rest(
             "FnoIsuNo": "A0566000",  # 선물옵션종목번호 (str) - 선물옵션 종목 코드 입력 선물 EX) 211V2060 옵션 EX) 201V2347
             "BnsTpCode": "1",  # 매매구분 (str) - 1:매도 2:매수
             "OrdPrc": 1280,  # 주문가격 (int)
-            "FnoOrdprcPtnCode": "03",  # 선물옵션호가유형코드 (str) - 00: 지정가 03: 시장가 10: 지정가(IOC)
+            "FnoOrdprcPtnCode": "03",  # 선물옵션호가유형코드 (str) - 00:지정가 03:시장가 05:조건부지정가 06:최유리지정가 10:지정가(IOC) 20:지정가(FOK) 13:시장가(IOC) 23:시장가(FOK) 16:최유리지정가(IOC) 26:최유리지정가(FOK)
             "OrdQty": 1,  # 주문수량 (int)
         },
     },

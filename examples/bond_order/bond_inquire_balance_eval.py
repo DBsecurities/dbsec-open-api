@@ -64,7 +64,7 @@ resp, data = call_rest(
     body={
         "In": {
             "D2balBaseQryTp": "0",  # D+2잔고기준조회구분 (str) - 0:전부조회 1:D+2잔고 0이상만 조회
-            "OtptPtnTpCode": "0",  # 출력유형구분 (str) - 0:상장폐지종목 출력 1:상장페지종목 제외
+            "OtptPtnTpCode": "0",  # 출력유형구분 (str) - 0:상장폐지종목 출력 1:상장폐지종목 제외
         },
     },
     label="채권잔고평가조회",

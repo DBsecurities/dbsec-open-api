@@ -305,7 +305,7 @@ class BondOrderAPI:
 
         Args:
             D2balBaseQryTp: D+2잔고기준조회구분 — 0:전부조회 1:D+2잔고 0이상만 조회
-            OtptPtnTpCode: 출력유형구분 — 0:상장폐지종목 출력 1:상장페지종목 제외
+            OtptPtnTpCode: 출력유형구분 — 0:상장폐지종목 출력 1:상장폐지종목 제외
             cont_yn: 연속거래 여부 ('Y'/'N').
             cont_key: 연속키 값.
 

@@ -72,7 +72,6 @@
 - [메서드 네이밍 규칙 (도메인 접두어)](#메서드-네이밍-규칙-도메인-접두어)
 - [운영 vs 모의투자](#운영-vs-모의투자)
 - [오류코드 & 유량제어](#오류코드--유량제어)
-- [주의사항](#주의사항)
 - [부록 — API 모의투자 지원 현황](#부록--api-모의투자-지원-현황)
 
 ---
@@ -488,8 +487,8 @@ psbl_qty    = await client.apis.kr_stock_order.kr_stock_inquire_psbl_quantity(
 #### 3-4. 시세
 
 ```python
-price       = await client.apis.kr_stock_quote.kr_stock_inquire_price(IsuNo="005930")
-orderbook   = await client.apis.kr_stock_quote.kr_stock_inquire_orderbook(IsuNo="005930")
+price       = await client.apis.kr_stock_quote.kr_stock_inquire_price(InputCondMrktDivCode="J", InputIscd1="005930")
+orderbook   = await client.apis.kr_stock_quote.kr_stock_inquire_orderbook(InputCondMrktDivCode="J", InputIscd1="005930")
 ranks       = await client.apis.kr_stock_quote.kr_stock_inquire_condition_rise_fall(...)
 ```
 
@@ -596,7 +595,7 @@ environment:
   # mode: "production"  # 운영 (7070)
 ```
 
-> ⚠️ **모든 API가 모의투자에서 동작하지는 않습니다.** [부록 — 실전투자 전용 API 목록](#부록--실전투자-전용-api-목록) 참조.
+> ⚠️ **모든 API가 모의투자에서 동작하지는 않습니다.** [부록 — API 모의투자 지원 현황](#부록--api-모의투자-지원-현황) 참조.
 
 ---
 
