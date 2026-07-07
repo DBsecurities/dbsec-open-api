@@ -90,6 +90,7 @@
 | **유연한 응답** | `APIResponse` dict 래퍼 기본, `resp.to_dataframe(key="Out1")` 로 DataFrame 변환 선택 |
 | **WebSocket 자동화** | 연결·재연결(exponential backoff)·구독 복원·종료 라이프사이클 내장 |
 | **개별 실행 가능 예제** | `examples/<group>/<method>.py` — 복사 → 값만 바꿔 실행 |
+| **LLM · AI 에이전트 친화** | [`llms.txt`](llms.txt)(저장소 구조·명세·예제 안내) + 코드 어시스턴트 MCP 서버 — LLM·AI 에이전트가 API를 쉽게 탐색 |
 
 ---
 

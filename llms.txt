@@ -1,0 +1,36 @@
+# DB Securities (DB증권) Open API — Python Sample Code
+
+> Python SDK and standalone examples for the DB증권(DB Securities) Open API — covering domestic & overseas stocks, domestic & overseas futures/options, exchange-traded bonds, and real-time WebSocket. Ships with an MCP server so LLM coding tools can query the API catalog, In/Out specs, and runnable sample code. Requires Python 3.10+.
+
+## SDK & Examples
+
+- [dbsec_sdk/](dbsec_sdk/): Async client library — single entry point `DBSecClient`. One line creates the client; it handles authentication, token caching, 2-tier rate limiting, auto pagination, and the WebSocket lifecycle. Call any endpoint with `await client.apis.<group>.<method>(field=value)`. `dbsec_sdk/apis/` holds the typed per-group endpoint wrappers (19 groups).
+- [examples/](examples/): Standalone scripts, one file per API (`<group>/<method>.py`), runnable without the SDK using only `examples/dbsec_helper.py` (stdlib + requests + pyyaml). Best for learning or testing one endpoint at a time via `call_rest("/api/...", body={...})`. 19 groups spanning domestic/overseas stock, domestic/overseas futures & options, bonds, charts, and realtime.
+- [dbsec_sdk/client_examples/](dbsec_sdk/client_examples/): End-to-end SDK demos — `quickstart.py` (read-only queries) and Jupyter notebooks (`kr-stock-trading-basic.ipynb`, `ov-stock-trading-basic.ipynb`) walking a full flow: quote → chart → account → order → amend/cancel → realtime.
+
+## Specifications & Guides
+
+- [docs/api_support_matrix.md](docs/api_support_matrix.md): Single source of truth for every API — group, name, TR code, method slug, paper-trading (demo) support (⭕/❌), and per-endpoint TPS.
+- [docs/sdk_usage.md](docs/sdk_usage.md): SDK usage guide — async call patterns, pagination (`fetch_all`), token lifecycle, `to_dataframe()`, WebSocket.
+- [docs/errors_and_rate_limits.md](docs/errors_and_rate_limits.md): Error-code reference and rate-limit policy.
+- [README.md](README.md): Main documentation — features, quick start, folder structure, install, configuration, usage.
+- [HOWTOUSE.md](HOWTOUSE.md): Step-by-step beginner guide.
+- [config.yaml.example](config.yaml.example): Configuration template — App Keys/Secrets for production (`prd_*`) and paper trading (`vtl_*`), `mode: demo|production`, and base/WebSocket URLs. Copy to `config.yaml`.
+
+## Code Assistant (MCP Server)
+
+- [mcp_server/](mcp_server/): stdio MCP server that lets LLM coding tools (Claude Desktop/Code, Cursor, etc.) query the API catalog, In/Out parameter specs, and runnable sample code. Tools: `list_api_groups`, `search_apis`, `get_api_spec`, `get_sample_code`, `get_setup_guide` (plus prompts `dbsec_easy_code` / `dbsec_detailed_code` and resource `dbsec://catalog`). It parses `examples/` as the spec source and enriches with `api_support_matrix.md`.
+
+## Official Resources
+
+- [DB증권 Open API 포털](https://openapi.dbsec.co.kr): Official DB Securities Open API portal — API guide, TR specs (InBlock/OutBlock), authentication, and application.
+- [GitHub Repository](https://github.com/DBsecurities/dbsec-open-api): This repository.
+
+## AI Agent Guidance
+
+- The spec source of truth is `examples/` (`<group>/<method>.py`): request (In) parameters live in inline `# comments`, response (Out) parameters in the docstring `OUT_BEGIN ~ OUT_END` section; `docs/api_support_matrix.md` adds TR code / demo support / TPS. When the MCP server is available, prefer its tools (`get_api_spec`, `get_sample_code`) over guessing signatures.
+- Two usage paths — pick by goal: `examples/` = `call_rest("/api/...", body={...})` (dict input, synchronous) for quick single-endpoint learning; `dbsec_sdk/` = `await client.apis.<group>.<method>(field=value)` (typed, async, rate-limited, auto-token) for embedding in apps/bots.
+- Method names encode the market domain via prefixes: `kr_stock_*`, `ov_stock_*`, `kr_futopt_*`, `ov_futopt_*`, `bond_*`, plus `kr_chart_*` and the utility groups `auth` / `common` / `ws_common`.
+- Order APIs execute REAL trades. Before generating order code, check `api_support_matrix.md`: some groups are production-only — e.g. exchange-traded bonds, NXT and night-session orders, and all overseas futures/options — where paper trading (`mode: demo`) is not available. Test in `mode: demo` where supported.
+- Setup: Python 3.10+, `pip install -e .`, then copy `config.yaml.example` → `config.yaml`, enter App Key/Secret, and set `mode`.
+- Reuse the existing auth/token helpers (`dbsec_sdk`'s `TokenManager`, or `examples/dbsec_helper.py`) instead of re-implementing authentication.
