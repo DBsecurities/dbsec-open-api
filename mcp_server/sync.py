@@ -37,13 +37,19 @@ def _run(args: list[str], cwd: Path | None = None) -> tuple[int, str]:
     try:
         p = subprocess.run(
             args, cwd=str(cwd) if cwd else None,
-            capture_output=True, text=True, timeout=120,
+            capture_output=True, text=True,
+            # git 출력은 UTF-8. encoding 미지정 시 Windows 기본 로케일(cp949 등)로 디코드해
+            # 한글 커밋 메시지·파일명에서 UnicodeDecodeError 가 난다 — errors="replace" 로 이중 방어.
+            encoding="utf-8", errors="replace",
+            timeout=120,
         )
-        return p.returncode, (p.stdout + p.stderr).strip()
+        return p.returncode, ((p.stdout or "") + (p.stderr or "")).strip()
     except FileNotFoundError:
         return 127, "git 실행 파일을 찾을 수 없습니다 (PATH 확인)."
     except subprocess.TimeoutExpired:
         return 124, "git 작업 시간 초과(120s)."
+    except Exception as e:  # 그 외 예상치 못한 오류도 서버를 죽이지 않고 fail-soft 처리
+        return 1, f"git 실행 오류: {type(e).__name__}: {e}"
 
 
 def _is_git_repo(path: Path) -> bool:
