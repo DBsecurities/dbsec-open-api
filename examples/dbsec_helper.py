@@ -8,6 +8,7 @@ from __future__ import annotations
 import asyncio
 import datetime as _dt
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -31,7 +32,10 @@ for _stream in (sys.stdout, sys.stderr):
 _KST = _dt.timezone(_dt.timedelta(hours=9), name="KST")
 _EXAMPLES_DIR = Path(__file__).resolve().parent
 _REPO_ROOT    = _EXAMPLES_DIR.parent
-_CONFIG_PATH  = _REPO_ROOT / "config.yaml"
+# config.yaml 위치: 환경변수 DBSEC_CONFIG 가 있으면 그 경로, 없으면 저장소 루트.
+# (examples/ 밖에서 실행하거나 config 를 다른 위치에 둘 때 DBSEC_CONFIG 로 지정)
+_CONFIG_PATH  = (Path(os.environ["DBSEC_CONFIG"]).expanduser()
+                 if os.environ.get("DBSEC_CONFIG") else _REPO_ROOT / "config.yaml")
 # 토큰 캐시는 저장소 루트의 단일 파일(.dbsec_token.json) — dbsec_sdk(auth) 와 공유한다.
 # mode 는 파일 내용으로 검증하므로(불일치 시 재발급) 모드별 파일 분리 없이 안전.
 _TOKEN_CACHE  = _REPO_ROOT / ".dbsec_token.json"

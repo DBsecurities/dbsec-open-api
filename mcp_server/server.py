@@ -174,7 +174,17 @@ def get_sample_code(identifier: str) -> str:
     if code is None:
         return f"샘플코드 파일이 없습니다: examples/{api.group_slug}/{api.slug}.py"
     rel = f"examples/{api.group_slug}/{api.slug}.py"
-    return f"# 파일: {rel}\n# (standalone — examples/dbsec_helper.py 헬퍼만 사용)\n\n{code}"
+    # examples/ 밖에서 실행할 때를 위한 안내를 헤더 주석으로만 덧붙인다(코드 본문은 원문 그대로).
+    header = (
+        f"# 파일: {rel}\n"
+        f"# (standalone — examples/dbsec_helper.py 헬퍼만 사용)\n"
+        f"#\n"
+        f"# ※ 이 스크립트는 examples/<group>/ 안에서 실행하도록 설계됨(아래 sys.path 가 상대경로).\n"
+        f"#   examples/ 밖(내 프로젝트 폴더 등)에서 실행하려면 sys.path 줄을 절대경로로 바꾸세요:\n"
+        f'#       sys.path.insert(0, r"{CAT.examples_dir}")\n'
+        f"#   config.yaml 이 저장소 루트가 아니면 환경변수로 위치 지정: set DBSEC_CONFIG=<경로>\\config.yaml\n"
+    )
+    return f"{header}\n{code}"
 
 
 @mcp.tool()
