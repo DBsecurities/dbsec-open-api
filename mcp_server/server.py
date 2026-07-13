@@ -68,6 +68,24 @@ def _render_in(api: Api) -> list[str]:
     return lines
 
 
+def _multi_variant(api: Api) -> Api | None:
+    """단건 API 에 대응하는 멀티 조회 API(<slug>_multi)가 카탈로그에 있으면 반환한다.
+
+    예: kr_stock_inquire_price → kr_stock_inquire_price_multi (국내/해외주식·국내선물옵션 멀티현재가).
+    카탈로그 존재 여부로 판별하므로 멀티 API 가 추가되어도 자동 반영된다.
+    """
+    return CAT.apis.get(api.slug + "_multi")
+
+
+def _multi_hint(api: Api) -> str | None:
+    """단건 API 조회 시 멀티 우선 사용을 안내하는 한 줄 (없으면 None)."""
+    m = _multi_variant(api)
+    if m is None:
+        return None
+    return (f"※ 현재가 등 시세 조회는 멀티 조회 API '{m.slug}' (TR:{m.tr_code or '-'}) 를 "
+            f"기본으로 사용하세요 — 1회 최대 50종목, 1종목만 조회할 때도 dataCnt=1 로 호출 가능합니다.")
+
+
 def _resolve_or_msg(identifier: str):
     apis = CAT.resolve(identifier)
     if not apis:
@@ -113,6 +131,16 @@ def search_apis(query: str = "", group: str = "") -> str:
     lines += [_api_oneline(a) for a in res[:200]]
     if len(res) > 200:
         lines.append(f"... 외 {len(res) - 200}건 (query 를 좁혀주세요)")
+    # 단건 시세 API 가 결과에 있으면 멀티 조회 우선 사용을 안내 (한 줄로 압축)
+    multis = []
+    for a in res[:200]:
+        m = _multi_variant(a)
+        if m and m.slug not in multis:
+            multis.append(m.slug)
+    if multis:
+        lines.append("")
+        lines.append("※ 현재가 등 시세 조회는 멀티 조회 API 를 기본으로 사용하세요 "
+                     f"(1회 최대 50종목, 1종목도 dataCnt=1 가능): {', '.join(multis)}")
     return "\n".join(lines)
 
 
@@ -146,6 +174,9 @@ def get_api_spec(identifier: str) -> str:
     ]
     if api.protocol == "REST":
         out.append(f"※ 요청 URL 은 위 전체 주소(도메인·포트 {CAT.base_url} 포함)를 그대로 사용하세요.")
+    hint = _multi_hint(api)
+    if hint:
+        out.append(hint)
     out += [
         "",
         "■ 요청(In) 파라미터",
@@ -175,9 +206,12 @@ def get_sample_code(identifier: str) -> str:
         return f"샘플코드 파일이 없습니다: examples/{api.group_slug}/{api.slug}.py"
     rel = f"examples/{api.group_slug}/{api.slug}.py"
     # examples/ 밖에서 실행할 때를 위한 안내를 헤더 주석으로만 덧붙인다(코드 본문은 원문 그대로).
+    hint = _multi_hint(api)
+    hint_block = f"#\n# {hint}\n#   → get_sample_code({_multi_variant(api).slug!r}) 로 멀티 샘플 조회\n" if hint else ""
     header = (
         f"# 파일: {rel}\n"
         f"# (standalone — examples/dbsec_helper.py 헬퍼만 사용)\n"
+        f"{hint_block}"
         f"#\n"
         f"# ※ 이 스크립트는 examples/<group>/ 안에서 실행하도록 설계됨(아래 sys.path 가 상대경로).\n"
         f"#   examples/ 밖(내 프로젝트 폴더 등)에서 실행하려면 sys.path 줄을 절대경로로 바꾸세요:\n"
