@@ -76,7 +76,7 @@
 | 국내선물옵션시세 | 호가조회 | `HOGA` | `kr_futopt_inquire_orderbook` | ⭕ | 5 |
 | 국내선물옵션시세 | 일별체결조회 | `DAYTRADE` | `kr_futopt_inquire_daily_executions` | ⭕ | 2 |
 | 국내선물옵션시세 | 시간대별체결조회 | `CONCLUSION` | `kr_futopt_inquire_time_execution` | ⭕ | 2 |
-| 국내선물옵션시세 | 옵션전광판 | `OSTOCK_CONDT` | `kr_futopt_option_board` | ⭕ | 2 |
+| 국내선물옵션시세 | 옵션전광판 | `OSTOCK_CONDT` | `kr_futopt_option_board` | ⭕ | 1 |
 | 국내선물옵션시세(실시간) | [실시간]선물옵션주문체결 | `IF0` | `kr_futopt_realtime_order_execution` | ⭕ | - |
 | 국내선물옵션시세(실시간) | [실시간]지수선물호가 | `F01` | `kr_futopt_realtime_index_future_orderbook` | ⭕ | - |
 | 국내선물옵션시세(실시간) | [실시간]지수선물체결가 | `F00` | `kr_futopt_realtime_index_future_execution_price` | ⭕ | - |
@@ -121,7 +121,7 @@
 | 해외주식주문 | 해외주식 예수금상세 | `CAZCQ01400` | `ov_stock_inquire_deposit_detail` | ⭕ | 2 |
 | 해외주식주문 | 해외주식 평균매입단가 조회 | `CAZCQ03400` | `ov_stock_inquire_avg_buy_price` | ❌ | 2 |
 | 해외주식시세 | 해외주식종목 조회 | `FSTKCODES` | `ov_stock_search_stocks` | ⭕ | 2 |
-| 해외주식시세 | 해외주식 멀티현재가조회 | `FSTKMULTIPRICE` | `ov_stock_inquire_price_multi` | ⭕ | 1 |
+| 해외주식시세 | 해외주식 멀티현재가조회 | `FSTKMULTIPRICE` | `ov_stock_inquire_price_multi` | ⭕ | 2 |
 | 해외주식시세 | 해외주식현재가조회 | `FSTKPRICE` | `ov_stock_inquire_price` | ⭕ | 2 |
 | 해외주식시세 | 해외주식호가조회 | `FSTKHOGA` | `ov_stock_inquire_orderbook` | ⭕ | 2 |
 | 해외주식시세 | 해외주식시간대별체결조회 | `FSTKCONCLUSION` | `ov_stock_inquire_time_execution` | ⭕ | 2 |

@@ -123,7 +123,7 @@ class OvStockQuoteAPI:
         InputCondMrktDivCode50]과 같이 최대 50건 호출이 가능합니다.
 
         엔드포인트: POST /api/v1/quote/overseas-stock/inquiry/multiprice
-        유량제어: 1 TPS
+        유량제어: 2 TPS
         가이드: https://openapi.dbsec.co.kr/apiservice?group_id=a804e311-cb53-499b-9d8a-a4d838f0a484&api_id=729276aa-9913-444e-b637-8efc316de84e
 
         Args:

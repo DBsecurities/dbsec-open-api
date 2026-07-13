@@ -2,7 +2,7 @@
 
 그룹    : 국내선물옵션시세
 엔드포인트: POST /api/v1/quote/kr-futureoption/inquiry/option-board
-TPS     : 2
+TPS     : 1
 가이드  : https://openapi.dbsec.co.kr/apiservice?group_id=80d95623-7135-481b-b109-d7370f1a261b&api_id=cc54c7e7-2e86-4688-b5cb-f5630fe48c60
 
 당사 HTS [2501] - "선옵 만기월별시세" 화면과 유시한 기능을 제공하는 국내옵션 전광판 API입니다. ※ 행사가를 기준으로 콜옵션/풋옵션 각 50종목에 대한 정보를 제공 합니다.

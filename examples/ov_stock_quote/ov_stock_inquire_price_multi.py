@@ -2,7 +2,7 @@
 
 그룹    : 해외주식시세
 엔드포인트: POST /api/v1/quote/overseas-stock/inquiry/multiprice
-TPS     : 1
+TPS     : 2
 가이드  : https://openapi.dbsec.co.kr/apiservice?group_id=a804e311-cb53-499b-9d8a-a4d838f0a484&api_id=729276aa-9913-444e-b637-8efc316de84e
 
 해외주식시세 멀티 현재가 조회 API입니다. ※ 1회 호출에 최대 50종목의 시세를 확인 가능합니다. ※ "dataCnt" 필드에 요청할 데이터의 개수를 입력하여 호출이 가능 합니다. (1~50) ※ "dataCnt" 필드의 값과 입력 데이터의 개수가 일치하지 않으면 호출이 불가합니다. ※ 아래와 같이시장구분필드와 종목코드가 1:1 쌍을 이뤄야 호출이 정상적으로 이뤄집니다. - InputIscd1:J (시장구분필드), - InputCondMrktDivCode1:005930 (종목코드) ※ [Inp...
