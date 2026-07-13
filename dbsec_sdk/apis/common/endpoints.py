@@ -63,10 +63,10 @@ class CommonAPI:
 
         Returns:
             APIResponse. 주요 응답 필드:
-              - Out: Out
+              - Out: Out (오브젝트 — 요약)
               - itemcnt: 조회건수
               - grpnm: 그룹명
-              - Out1: Out1
+              - Out1: Out1 (배열 — 종목 목록)
               - itmseq: 종목순서
               - itmmk: 종목종류
               - itmcd: 종목코드 — 해외주식의 경우, 시장코드 + 종목코드 형태로 출력됩니다. (ex. "NSAAPL") 맨 앞의 시장코드 2자리를 제거하시고 사용 바랍니다. 관심종목의 해외주식 시장코드는 시세 조회...
@@ -103,7 +103,9 @@ class CommonAPI:
 
         Returns:
             APIResponse. 주요 응답 필드:
-              - Out: Out
+              - Out: Out (오브젝트 — 요약)
+              - reccnt: 그룹개수
+              - Out1: Out1 (배열 — 그룹 목록)
               - itmcnt: 그룹 내 종목수
               - grpno: 그룹 번호
               - grpnm: 그룹명

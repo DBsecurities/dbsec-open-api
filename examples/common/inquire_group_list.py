@@ -17,7 +17,9 @@ TPS     : 2
 
 ── 응답 파라미터 (Out) ─ OUT_BEGIN ──────────────────────
   [TR MCJDD88840]
-    Out  (배열)  Out
+    Out  (오브젝트)  Out
+      reccnt  (문자)  그룹개수
+    Out1  (배열)  Out1 — 그룹 목록
       itmcnt  (문자)  그룹 내 종목수
       grpno  (문자)  그룹 번호
       grpnm  (문자)  그룹명
