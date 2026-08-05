@@ -8,7 +8,7 @@
 ---
 ## 전체 API 매트릭스
 
-| 구분&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | API 명 | TR 코드 | 메서드 | 모의투자 | TPS |
+| 구분&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; | API 명 | TR 코드 | 메서드 | 모의투자 | TPS |
 |---|---|---|---|:---:|:---:|
 | OAuth 인증 | [접근토큰 발급](../examples/auth/token_issue.py) | `token` | [`token_issue`](../dbsec_sdk/apis/auth/endpoints.py#L42) | ⭕ | - |
 | OAuth 인증 | [접근토큰 폐기](../examples/auth/token_revoke.py) | `revoke` | [`token_revoke`](../dbsec_sdk/apis/auth/endpoints.py#L86) | ⭕ | - |
