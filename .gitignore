@@ -63,5 +63,5 @@ _workspace/
 
 tests/
 
-# 웹 API 테스터 (로컬 전용 도구)
-web_test/
+# 웹 API 테스터 — 소스는 커밋, 빌드 산출물(catalog.json)만 제외 (서버가 기동 시 메모리에 재생성)
+web_test/catalog.json

@@ -1,0 +1,585 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>DB증권 OpenAPI · Web Tester</title>
+<link rel="icon" href="favicon.ico">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+  :root{
+    /* ── DARK (기본) ── */
+    --bg:#16181d; --side:#14161a; --panel:#1d2026; --panel2:#22262e; --border:#31363f;
+    --text:#d8dce3; --muted:#8b93a1; --head:#9aa3b2; --title:#ffffff;
+    --accent:#3fb950; --accent2:#56d364; --ink:#0b1f12;
+    --green:#2ec27e; --red:#e5534b; --blue:#6cb6ff; --purple:#b083f0; --str:#9ece6a;
+    --c-flag:#79c0ff; --c-url:#7ee787; --code-text:#c9d1d9;
+    --input:#15171c; --placeholder:#5b6270; --focus:#48505c; --dot-off:#444b55;
+    --rest-bg:#1f3a2e; --rest-tx:#5fd6a0; --ws-bg:#23314d; --ws-tx:#7fa9ff; --ord-bg:#3d2326; --ord-tx:#f08a86;
+    --ok-bg:#16321f; --ok-tx:#5fd6a0; --bad-bg:#3a1f1f; --bad-tx:#f08a86;
+    --sel-bg:#17271d; --sel-bd:#2f7d4c; --use-bd:#2ea043; --use-bg:#13211a;
+    --warn-bg:#3a1f1f; --warn-bd:#5a2f31; --warn-tx:#f0a8a4;
+    --sb:rgba(255,255,255,.16); --sb-h:rgba(255,255,255,.32);
+    --hair:rgba(255,255,255,.07);                        /* 리스트 내부 극저대비 구분선 */
+    --ring:rgba(63,185,80,.4);                           /* 입력 포커스 링 */
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+  }
+  :root[data-theme="light"]{
+    /* ── LIGHT ── */
+    --bg:#ffffff; --side:#f6f8fa; --panel:#ffffff; --panel2:#eff2f5; --border:#d0d7de;
+    --text:#1f2328; --muted:#636c76; --head:#57606a; --title:#1f2328;
+    --accent:#2da44e; --accent2:#3fb950; --ink:#ffffff;
+    --green:#1a7f37; --red:#cf222e; --blue:#0969da; --purple:#8250df; --str:#0a7d33;
+    --c-flag:#0550ae; --c-url:#116329; --code-text:#1f2328;
+    --input:#f0f2f5; --placeholder:#8c959f; --focus:#0969da; --dot-off:#c4ccd4;
+    --rest-bg:#dafbe1; --rest-tx:#116329; --ws-bg:#ddf4ff; --ws-tx:#0550ae; --ord-bg:#ffebe9; --ord-tx:#cf222e;
+    --ok-bg:#dafbe1; --ok-tx:#116329; --bad-bg:#ffebe9; --bad-tx:#cf222e;
+    --sel-bg:#dafbe1; --sel-bd:#2da44e; --use-bd:#2da44e; --use-bg:#eafbef;
+    --warn-bg:#ffebe9; --warn-bd:#ff8182; --warn-tx:#cf222e;
+    --sb:rgba(0,0,0,.22); --sb-h:rgba(0,0,0,.38);
+    --hair:rgba(27,35,45,.07);
+    --ring:rgba(45,164,78,.3);
+  }
+  *{box-sizing:border-box}
+  /* 스크롤바 — 오버레이형(트랙 배경 없음, 얇고 둥근 thumb) */
+  *{scrollbar-width:thin;scrollbar-color:var(--sb) transparent}
+  ::-webkit-scrollbar{width:11px;height:11px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--sb);border-radius:8px;border:3px solid transparent;background-clip:padding-box}
+  ::-webkit-scrollbar-thumb:hover{background:var(--sb-h);background-clip:padding-box}
+  ::-webkit-scrollbar-corner{background:transparent}
+  body{margin:0;background:var(--bg);color:var(--text);font:15px/1.6 "Pretendard Variable",Pretendard,-apple-system,Segoe UI,Roboto,"Malgun Gothic",sans-serif;font-weight:440;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  .app{display:grid;grid-template-columns:330px minmax(0,1.7fr) minmax(360px,1fr);height:100vh}   /* 본문:명세 = 1.7:1 */
+  /* ── 우측 In/Out 명세 패널 ── */
+  .spec{background:var(--side);overflow:auto;min-height:0;padding:14px 14px 40px}
+  .spec .spech{font-size:11px;font-weight:700;letter-spacing:.6px;color:var(--head);text-transform:uppercase;margin:2px 0 6px}
+  .spec .spect{font-size:14px;font-weight:700;color:var(--title);margin:0 0 2px}
+  .spec .spectr{font-family:var(--mono);font-size:11px;color:var(--muted);margin:0 0 14px}
+  .spec .h{display:flex;align-items:center;gap:6px;font-size:12px;letter-spacing:.5px;color:var(--head);text-transform:uppercase;margin:0 0 6px}
+  .spec .cnt{background:var(--panel2);color:var(--muted);font-size:10px;border-radius:10px;padding:0 7px}
+  .frow{padding:9px 12px;border-bottom:1px solid var(--hair)}
+  .frow:last-child{border-bottom:0}
+  .fk{font-family:var(--mono);font-size:12px;font-weight:600;color:var(--text)}
+  .fn{margin-left:8px;font-family:"Pretendard Variable",Pretendard,-apple-system,Segoe UI,Roboto,"Malgun Gothic",sans-serif;font-size:12px;font-weight:700;color:var(--text)}
+  .ft{display:inline-block;margin-left:6px;background:var(--rest-bg);color:var(--rest-tx);font-family:var(--mono);font-size:10px;border-radius:4px;padding:0 6px;vertical-align:1px}
+  .fd{font-size:11px;color:var(--muted);margin-top:4px;line-height:1.55;word-break:break-all}
+  .fblk{padding:7px 12px;background:var(--panel2);
+    font-family:var(--mono);font-size:11px;font-weight:700;color:var(--head)}
+  .fblk .fn{font-weight:400}
+  .fcommon{padding:9px 12px;font-size:12px;font-weight:700;color:var(--text);border-top:1px solid var(--hair)}
+  .outspec{margin:0;background:var(--panel);border-radius:9px;padding:12px;
+    font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--code-text);white-space:pre-wrap;word-break:break-all}
+  /* ── 사이드바 (API 목록) ── */
+  .side{display:flex;flex-direction:column;min-height:0;background:var(--side)}
+  .sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 12px 8px}
+  .side h1{font-size:13px;letter-spacing:.5px;color:var(--head);margin:0;text-transform:uppercase}
+  .search{margin:0 12px 8px}
+  .search input{width:100%;background:var(--input);border:0;color:var(--text);
+    border-radius:8px;padding:9px 11px;font-size:13px;outline:none}
+  .search input:focus{box-shadow:0 0 0 2px var(--ring)}
+  .filters{display:flex;gap:6px;padding:0 12px 8px;flex-wrap:wrap}
+  /* 필터 — Response 상태 필(.pill)과 동일한 디자인 (dot 제외) */
+  .filters button{background:var(--panel2);border:0;color:var(--muted);
+    border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600;cursor:pointer}
+  .filters button.on{background:var(--ok-bg);color:var(--ok-tx)}
+  .list{overflow:auto;flex:1;padding:4px 8px 24px}
+  /* ── API 목록 (Korbit 스타일: 도메인 대제목 → 소그룹 → 한글명 + 우측 색 뱃지) ── */
+  .domh{font-size:15px;font-weight:800;color:var(--title);padding:18px 8px 2px;letter-spacing:-.2px}
+  .grp{display:flex;align-items:center;gap:6px;color:var(--head);font-size:12.5px;font-weight:600;
+    padding:10px 8px 3px;cursor:pointer;user-select:none}
+  .grp:hover{color:var(--text)}
+  .grp .caret{font-size:9px;width:9px;flex:none;color:var(--muted)}
+  .grp .gcount{margin-left:auto;color:var(--muted);font-weight:400}
+  .item{display:flex;align-items:center;justify-content:space-between;gap:8px;
+    margin-left:8px;padding:7px 10px;border-radius:7px;cursor:pointer}
+  .item:hover{background:var(--panel)}
+  .item.sel{background:var(--sel-bg)}
+  .inm{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .nm{font-family:var(--mono);font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .item .lb{color:var(--muted);font-size:11px;margin-left:auto;white-space:nowrap}
+  .badge{font-size:9px;font-weight:700;padding:1px 5px;border-radius:4px;text-transform:uppercase}
+  .b-rest{background:var(--rest-bg);color:var(--rest-tx)}
+  .b-ws{background:var(--ws-bg);color:var(--ws-tx)}
+  .b-order{background:var(--ord-bg);color:var(--ord-tx)}
+  .b-oauth{background:var(--panel2);color:var(--purple)}
+  /* ── 메인 ── */
+  .main{overflow:auto;padding:18px 22px 60px}
+  .sec{margin:0 0 18px}
+  .sec>.h{font-size:12px;letter-spacing:.6px;color:var(--head);text-transform:uppercase;margin:0 0 8px}
+  .card{background:var(--panel);border-radius:10px}
+  .cred-row{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid var(--hair)}
+  .cred-row:last-child{border-bottom:0}
+  .cred-row .k{font-family:var(--mono);font-size:12.5px;color:var(--muted);width:96px}
+  .cred-row .v{font-family:var(--mono);font-size:12.5px;color:var(--text);flex:1;overflow:hidden;text-overflow:ellipsis}
+  .cred-row input.tok{flex:1;min-width:0;background:var(--input);border:0;color:var(--text);
+    font-family:var(--mono);font-size:12.5px;border-radius:7px;padding:9px 11px;outline:none}
+  .cred-row input.tok::placeholder{color:var(--placeholder)}
+  .cred-row input.tok:focus{box-shadow:0 0 0 2px var(--ring)}
+  .cred-row.use input.tok{background:var(--use-bg);box-shadow:0 0 0 1.5px var(--use-bd)}
+  .dot{width:9px;height:9px;border-radius:50%;background:var(--dot-off);flex:none}
+  .dot.on{background:var(--green)}
+  .mini{background:var(--panel2);border:0;color:var(--text);border-radius:6px;
+    padding:5px 11px;font-size:12px;cursor:pointer}
+  .mini:hover{filter:brightness(1.06)}
+  .urlbar{display:flex;align-items:stretch;background:var(--panel2);border-radius:10px;overflow:hidden}
+  .urlbar .m{display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:700;
+    padding:11px 13px;font-size:12px;white-space:nowrap}
+  .urlbar .u{font-family:var(--mono);font-size:13px;padding:11px 13px 11px 0;color:var(--text);overflow:auto;white-space:nowrap}
+  .codewrap{position:relative}
+  .codehead{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);
+    border-bottom:1px solid var(--hair);border-radius:10px 10px 0 0;padding:8px 12px}
+  .codehead .t{font-size:12px;color:var(--head);text-transform:uppercase;letter-spacing:.5px}
+  pre.code{margin:0;background:var(--panel2);border-radius:0 0 10px 10px;
+    padding:13px;overflow:auto;font-family:var(--mono);font-size:13px;color:var(--code-text);max-height:230px}
+  .code .c-cmd{color:var(--purple)} .code .c-flag{color:var(--c-flag)} .code .c-str{color:var(--str)} .code .c-url{color:var(--c-url)}
+  textarea.body{width:100%;min-height:120px;background:var(--panel2);border:0;
+    border-radius:0 0 10px 10px;color:var(--code-text);font-family:var(--mono);font-size:13px;padding:12px;outline:none;resize:vertical}
+  textarea.body:focus{box-shadow:0 0 0 2px var(--ring)}
+  input.wskey{width:100%;background:var(--input);border:0;color:var(--code-text);
+    font-family:var(--mono);font-size:13px;border-radius:10px;padding:11px 12px;outline:none}
+  input.wskey:focus{box-shadow:0 0 0 2px var(--ring)}
+  input.wskey::placeholder{color:var(--placeholder)}
+  .actions{display:flex;align-items:center;gap:12px;margin-top:12px}
+  .tryit{background:var(--ok-bg);color:var(--ok-tx);font-weight:700;border:0;border-radius:8px;
+    padding:9px 22px;font-size:14px;cursor:pointer}
+  .tryit:hover{filter:brightness(.96)}
+  .tryit:active{transform:translateY(1px)}
+  .tryit[disabled]{opacity:.45;cursor:not-allowed}
+  .copy{background:transparent;border:0;color:var(--muted);border-radius:7px;padding:6px 10px;cursor:pointer;font-size:12px}
+  .copy:hover{background:var(--panel2);color:var(--text)}
+  .warn{display:flex;align-items:center;gap:8px;background:var(--warn-bg);color:var(--warn-tx);
+    border-radius:8px;padding:10px 13px;font-size:12.5px;margin-top:10px}
+  .warn input{accent-color:var(--red)}
+  /* Response 영역만 예외적으로 테두리 사용 — 화이트 테마에서 배경과 구분 */
+  .resp .codehead{border:1px solid var(--border);border-bottom:0}
+  .resp .card{border:1px solid var(--border)}
+  .resp .status{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);margin-bottom:8px}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:2px 9px;border-radius:20px;font-size:12px;font-weight:600}
+  .pill .d{width:8px;height:8px;border-radius:50%}
+  .pill.ok{background:var(--ok-bg);color:var(--ok-tx)} .pill.ok .d{background:var(--green)}
+  .pill.bad{background:var(--bad-bg);color:var(--bad-tx)} .pill.bad .d{background:var(--red)}
+  .pill .d.live{animation:livep 1.1s ease-in-out infinite}
+  @keyframes livep{0%,100%{opacity:1}50%{opacity:.3}}
+  .tryit.stop{background:var(--bad-bg);color:var(--bad-tx)}
+  .empty{color:var(--muted);font-size:13px}
+  .titlebar{display:flex;align-items:baseline;gap:10px;margin:0 0 14px}
+  .titlebar .nm{font-family:var(--mono);font-size:16px;color:var(--title)}
+  .titlebar .lb{color:var(--muted);font-size:13px}
+  .titlebar .trc{font-family:var(--mono);font-size:12px;color:var(--muted);background:var(--panel2);border-radius:5px;padding:1px 7px}
+  .modebar{display:flex;align-items:center;gap:12px;margin:0 0 16px;flex-wrap:wrap}
+  .modebar .mlabel{font-size:12px;color:var(--head);text-transform:uppercase;letter-spacing:.5px}
+  .seg{display:inline-flex;background:var(--panel2);border-radius:8px;overflow:hidden}
+  .seg button{background:transparent;border:0;color:var(--muted);padding:6px 18px;font-size:13px;cursor:pointer;font-weight:700}
+  .seg button.on{background:var(--ok-bg);color:var(--ok-tx)}
+  .seg.theme button{padding:4px 9px;font-size:13px;font-weight:600;line-height:1}
+  #themeseg button{display:flex;align-items:center;justify-content:center;padding:5px 9px}
+  #themeseg button svg{display:block}
+  .modebar .mhint{font-family:var(--mono);font-size:11.5px;color:var(--muted)}
+  .modebar .seg button{width:96px;padding:6px 0;text-align:center}   /* Example/SDK 동일 폭 */
+  .kv{color:var(--muted);font-size:12px;font-family:var(--mono);margin-top:8px}
+  a.gd{color:var(--blue);font-size:11px;text-decoration:none}
+</style>
+<script>/* 깜빡임 방지: 페인트 전에 테마 적용 */(function(){try{var p=localStorage.getItem('dbsec_theme')||'system';var d=matchMedia('(prefers-color-scheme: dark)').matches;document.documentElement.dataset.theme=(p==='system'?(d?'dark':'light'):p);}catch(e){}})();</script>
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="sidehead">
+      <h1>API 목록 <span id="count" style="color:var(--muted)"></span></h1>
+      <div class="seg theme" id="themeseg">
+        <button data-t="light" title="라이트" onclick="setTheme('light')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
+        <button data-t="dark" title="다크" onclick="setTheme('dark')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
+        <button data-t="system" title="시스템" onclick="setTheme('system')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></button>
+      </div>
+    </div>
+    <div class="search"><input id="q" placeholder="검색: 그룹·메서드·라벨" oninput="render()"></div>
+    <div class="filters" id="filters"></div>
+    <div class="list" id="list"></div>
+  </aside>
+
+  <main class="main" id="main">
+    <div class="empty">왼쪽에서 API 를 선택하세요.</div>
+  </main>
+
+  <aside class="spec" id="spec">
+    <div class="spech">INPUT / OUTPUT</div>
+    <div class="empty">API 를 선택하면 요청(In)·응답(Out) 필드 명세가 표시됩니다.</div>
+  </aside>
+</div>
+
+<script>
+let CAT=[], CUR=null, KINDF="all", BASEURL="", HAS={};
+let COLLAPSED=new Set(); try{COLLAPSED=new Set(JSON.parse(localStorage.getItem('dbsec_collapsed')||'[]'));}catch(_){}   // 접힌 그룹
+let TOKENS={prd:"", ov_futopt:""};   // 페이지에 입력한 access token (localStorage 보존)
+// 서버가 직접 서빙하면 상대경로, 미리보기/다른 출처면 로컬 서버를 절대경로로 호출.
+const API = (location.hostname==="127.0.0.1"||location.hostname==="localhost") && location.port==="8765"
+            ? "" : "http://127.0.0.1:8765";
+const $=s=>document.querySelector(s);
+function loadTokens(){ try{const t=JSON.parse(localStorage.getItem("dbsec_tokens")||"{}");TOKENS.prd=t.prd||"";TOKENS.ov_futopt=t.ov_futopt||"";}catch(_){} }
+function saveTokens(){ localStorage.setItem("dbsec_tokens", JSON.stringify(TOKENS)); }
+let OAUTHKEY="prd";   // OAuth(토큰 발급/폐기) 대상 키
+function setOauthKey(k){ OAUTHKEY=k; if(CUR&&CUR.oauth) main(); }
+function curTokenKind(){ if(CUR&&CUR.oauth) return OAUTHKEY; return CUR && CUR.is_ov_futopt ? "ov_futopt" : "prd"; }
+let MODE = localStorage.getItem("dbsec_mode")||"example";   // 'example' | 'sdk'
+function setMode(m){ MODE=m; localStorage.setItem("dbsec_mode",m); if(CUR) main(); }
+function flatten(body){ if(!body||typeof body!=='object')return {}; const b=Object.values(body).filter(v=>v&&typeof v==='object'&&!Array.isArray(v)); if(b.length){const o={};b.forEach(x=>Object.assign(o,x));return o;} return {...body}; }
+function pyval(v){ if(typeof v==='boolean')return v?'True':'False'; if(v===null)return 'None'; return JSON.stringify(v); }
+function curTrKey(){ const i=$("#wskey"); return i ? i.value : ((CUR&&CUR.tr_key)||''); }   // WS: 입력칸 값 우선, 없으면 카탈로그 기본값
+function pySnippet(e, body){
+  if(e.oauth){
+    return e.oauth==='issue'
+      ? `token = await client.get_token()   # 발급/확보 (form-urlencoded)\nprint(token)`
+      : `await client.revoke()   # 현재 토큰 폐기 + 로컬 캐시(.dbsec_token.json) 삭제`;
+  }
+  if(e.kind==='ws'){
+    if(MODE==='sdk'){
+      const u=e.is_ov_futopt?`ws_url=client.config.ws_url_for("${e.group_slug}")`:"";
+      return `ws = client.create_websocket(${u})\nws.on_message(lambda cd, k, d: print(cd, k, d))\nawait ws.connect()\nawait ws.add_realtime("${e.tr_cd}", "${curTrKey()}", tr_type="${e.tr_type}")\nawait ws.run()`;
+    }
+    return `from dbsec_helper import ws_subscribe, run_ws\nrun_ws(ws_subscribe(\n    tr_cd="${e.tr_cd}",\n    tr_key="${curTrKey()}",\n    group_slug="${e.group_slug}",\n    tr_type="${e.tr_type}",\n))`;
+  }
+  const kw=flatten(body), lines=Object.entries(kw).map(([k,v])=>`    ${k}=${pyval(v)}`);
+  if(e.paged) lines.push("    fetch_all=True, max_pages=3");
+  const inner=lines.length?"\n"+lines.join(",\n")+"\n":"";
+  return `resp = await client.apis.${e.group}.${e.method}(${inner})\nprint(resp.status_code, resp.rsp_cd)\nprint(resp.body)`;
+}
+function renderCode2(e, body){
+  const isWs=e.kind==='ws';
+  if(MODE==='example' && !isWs) return {title:"cURL Request", html:curlHtml(e, body)};
+  return {title:(MODE==='sdk'?'SDK · Python  (client.apis.* / DBSecWebSocket)':'Example · Python  (dbsec_helper)'),
+          html:esc(pySnippet(e, isWs?null:body))};
+}
+function updateCode(){
+  if(!CUR) return;
+  let body=CUR.body; const ta=$("#body");
+  if(ta){ try{ body=JSON.parse(ta.value); }catch(_){ } }
+  const c=renderCode2(CUR, body);
+  const t=$("#codetitle"), p=$("#curl"); if(t)t.textContent=c.title; if(p)p.innerHTML=c.html;
+}
+// ── 테마 (light / dark / system) ──
+function resolveSys(){ try{ return matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light'; }catch(_){ return 'dark'; } }
+function setTheme(pref){
+  const t = pref==='system' ? resolveSys() : pref;
+  document.documentElement.dataset.theme = t;
+  localStorage.setItem('dbsec_theme', pref);
+  document.querySelectorAll('#themeseg button').forEach(b=>b.classList.toggle('on', b.dataset.t===pref));
+}
+try{ matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{ if((localStorage.getItem('dbsec_theme')||'system')==='system') setTheme('system'); }); }catch(_){}
+setTheme(localStorage.getItem('dbsec_theme')||'system');
+const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
+
+async function load(){
+  const r=await fetch(API+'/catalog'); const j=await r.json();
+  CAT=j.catalog; BASEURL=j.credentials.base_url; HAS=j.credentials.has||{}; loadTokens();
+  const kinds=[["all","전체"],["order","주문"],["rest","시세 · 조회"],["ws","실시간"]];
+  $("#filters").innerHTML=kinds.map(([k,label])=>`<button data-k="${k}" class="${k==='all'?'on':''}" onclick="setKind('${k}')">${label} ${k==='all'?CAT.length:CAT.filter(e=>e.kind===k).length}</button>`).join("");
+  render();
+}
+function setKind(k){KINDF=k;[...document.querySelectorAll('#filters button')].forEach(b=>b.classList.toggle('on',b.dataset.k===k));render();}
+
+// 도메인 대제목 / 소그룹 라벨 (Korbit 문서식 계층)
+const DOMAIN_OF=g=>g==='auth'?'인증'
+  :(g.startsWith('kr_stock')||g==='kr_chart')?'국내주식'
+  :g.startsWith('ov_stock')?'해외주식'
+  :g.startsWith('kr_futopt')?'국내선물옵션'
+  :g.startsWith('ov_futopt')?'해외선물옵션'
+  :g.startsWith('bond')?'장내채권':'공통';
+const SUB_OF=g=>g==='kr_chart'?'차트':g==='auth'?'OAuth':g==='common'?'공통':g==='ws_common'?'웹소켓 공통'
+  :g.endsWith('_order')?'주문':g.endsWith('_quote')?'시세':g.endsWith('_realtime')?'실시간':g;
+const KIND_LABEL={rest:'REST',order:'REST',ws:'실시간(WS)',oauth:'REST'};   // 뱃지 = 프로토콜 표기
+
+function render(){
+  const q=($("#q").value||"").toLowerCase();
+  let items=CAT.filter(e=>(KINDF==="all"||e.kind===KINDF) &&
+     (!q || (e.group+(e.group_label||'')+e.method+e.label+e.id).toLowerCase().includes(q)));
+  $("#count").textContent=`(${items.length})`;
+  const searching=!!q;   // 검색 중엔 접힘 무시 — 결과가 숨지 않도록 전부 펼쳐 보여준다
+  let html="", dom=null, grp=null, hidden=false;
+  for(const e of items){
+    const d=DOMAIN_OF(e.group);
+    if(d!==dom){ dom=d; grp=null; html+=`<div class="domh">${esc(d)}</div>`; }
+    if(e.group!==grp){
+      grp=e.group;
+      hidden=!searching && COLLAPSED.has(e.group);
+      const cnt=items.filter(x=>x.group===e.group).length;
+      html+=`<div class="grp" onclick="toggleGroup('${e.group}')">
+        <span class="caret">${hidden?'▸':'▾'}</span>${esc(SUB_OF(e.group))}
+        <span class="gcount">${cnt}</span></div>`;
+    }
+    if(hidden) continue;
+    const bk=e.oauth?'oauth':e.kind;
+    const sel=CUR&&CUR.id===e.id?"sel":"";
+    html+=`<div class="item ${sel}" onclick="sel('${e.id.replace(/'/g,"")}')" title="${esc(e.method)}">
+      <span class="inm">${esc(e.label||e.method)}</span>
+      <span class="badge b-${bk}">${esc(KIND_LABEL[bk]||bk)}</span></div>`;
+  }
+  $("#list").innerHTML=html||`<div class="grp" style="cursor:default">결과 없음</div>`;
+}
+function toggleGroup(g){
+  if(COLLAPSED.has(g)) COLLAPSED.delete(g); else COLLAPSED.add(g);
+  try{ localStorage.setItem('dbsec_collapsed', JSON.stringify([...COLLAPSED])); }catch(_){}
+  render();
+}
+
+function sel(id){ CUR=CAT.find(e=>e.id===id); render(); main(); }
+
+// ── 우측 In/Out 명세 패널 (KB식 INPUT/OUTPUT 레퍼런스) ──
+function fieldRow(f){
+  return `<div class="frow">
+    <div class="fk">${esc(f.key)}${f.type?`<span class="ft">${esc(f.type)}</span>`:''}${f.name?`<span class="fn">${esc(f.name)}</span>`:''}</div>
+    ${f.desc?`<div class="fd">${esc(f.desc)}</div>`:''}
+  </div>`;
+}
+function renderSpec(e){
+  const el=$("#spec"); if(!el) return;
+  if(!e){ el.innerHTML=`<div class="spech">INPUT / OUTPUT</div>
+    <div class="empty">API 를 선택하면 요청(In)·응답(Out) 필드 명세가 표시됩니다.</div>`; return; }
+  const inf=e.in_fields||[];
+  const inRows=inf.map(fieldRow).join("");
+  // Output — Input 과 동일한 행 렌더 (블록 Out/Out1 은 구분 헤더로)
+  const ob=e.out_blocks||[];
+  const outCnt=ob.reduce((n,b)=>n+b.fields.length,0);
+  const multiTr=new Set(ob.map(b=>b.tr).filter(Boolean)).size>1;
+  let seenTr=null, outRows="";
+  for(const b of ob){
+    if(multiTr && b.tr && b.tr!==seenTr){ seenTr=b.tr;
+      outRows+=`<div class="fblk">TR ${esc(b.tr)}</div>`; }
+    if(b.block)
+      outRows+=`<div class="fblk">${esc(b.block)}<span class="ft">${esc(b.type)}</span>${b.desc?`<span class="fn"> ${esc(b.desc)}</span>`:''}</div>`;
+    outRows+=b.fields.map(fieldRow).join("");
+  }
+  const common=e.out_common?`<div class="fcommon">${esc(e.out_common)}</div>`:"";
+  const outCard = outRows
+    ? `<div class="card">${outRows}${common}</div>`
+    : (e.out_text
+        ? `<pre class="outspec">${esc(e.out_text)}</pre>`
+        : `<div class="card"><div class="fd" style="padding:10px 12px">(응답 명세 없음 — rsp_cd/rsp_msg 만 반환)</div></div>`);
+  el.innerHTML=`
+    <div class="spech">INPUT / OUTPUT</div>
+    <div class="spect">${esc(e.label||e.method)}</div>
+    <div class="spectr">${esc(e.method)}${e.tr_code?` · TR: ${esc(e.tr_code)}`:''}</div>
+    <div class="sec"><div class="h">Input <span class="cnt">${inf.length}</span></div>
+      <div class="card">${inRows||'<div class="fd" style="padding:10px 12px">(요청 파라미터 없음 — 본문 참조)</div>'}</div></div>
+    <div class="sec"><div class="h">Output <span class="cnt">${outCnt}</span></div>
+      ${outCard}</div>`;
+}
+
+function credsHtml(){
+  const useK = curTokenKind();
+  const row=(k,label)=>`<div class="cred-row ${k===useK&&CUR?'use':''}">
+     <span class="dot ${TOKENS[k]?'on':''}" id="dot_${k}"></span>
+     <input class="tok" id="tok_${k}" type="text" autocomplete="off" spellcheck="false"
+        placeholder="${label}" value="${esc(TOKENS[k]||'')}"
+        oninput="TOKENS['${k}']=this.value;saveTokens();const d=document.getElementById('dot_${k}');if(d)d.className='dot '+(this.value?'on':'')">
+   </div>`;
+  return `<div class="card">
+     ${row('prd','ACCESS TOKEN — 일반 (국내·해외주식·채권·국내선옵)')}
+     ${row('ov_futopt','ACCESS TOKEN — 해외선옵 (ov_futopt · 선택)')}
+   </div>
+   <div class="kv">base_url = ${esc(BASEURL)} · 현재 API 인증 토큰: <b style="color:var(--accent)">${useK==='ov_futopt'?'해외선옵':'일반'}</b> · 발급/폐기는 목록 상단 <b style="color:var(--text)">auth › token_issue / token_revoke</b> 에서 (localStorage 저장)</div>`;
+}
+
+function curlHtml(e, body){
+  if(e.oauth){
+    const data = e.oauth==='issue'
+      ? `grant_type=client_credentials&amp;appkey=&lt;APP_KEY&gt;&amp;appsecretkey=&lt;APP_SECRET&gt;&amp;scope=oob`
+      : `appkey=&lt;APP_KEY&gt;&amp;appsecretkey=&lt;APP_SECRET&gt;&amp;token_type_hint=access_token&amp;token=&lt;ACCESS_TOKEN&gt;`;
+    return `<span class="c-cmd">curl</span> <span class="c-flag">--request</span> POST \\\n`+
+      `     <span class="c-flag">--url</span> <span class="c-url">'${esc(BASEURL)}${esc(e.url)}'</span> \\\n`+
+      `     <span class="c-flag">--header</span> <span class="c-str">'content-type: application/x-www-form-urlencoded'</span> \\\n`+
+      `     <span class="c-flag">--data</span> <span class="c-str">'${data}'</span>`;
+  }
+  if(e.kind==='ws'){
+    return `<span class="c-cmd">WebSocket</span> ${e.is_ov_futopt?'wss://…:7071':'wss://…:7070'}/websocket\n`+
+      `  header: { token, tr_type:<span class="c-str">"${esc(e.tr_type)}"</span> }\n`+
+      `  body:   { tr_cd:<span class="c-str">"${esc(e.tr_cd)}"</span>, tr_key:<span class="c-str">"${esc(e.tr_key||'')}"</span> }`;
+  }
+  const b=JSON.stringify(body);
+  return `<span class="c-cmd">curl</span> <span class="c-flag">--request</span> POST \\\n`+
+    `     <span class="c-flag">--url</span> <span class="c-url">'${esc(BASEURL)}${esc(e.url)}'</span> \\\n`+
+    `     <span class="c-flag">--header</span> <span class="c-str">'content-type: application/json'</span> \\\n`+
+    `     <span class="c-flag">--header</span> <span class="c-str">'authorization: Bearer &lt;${e.is_ov_futopt?'OV_FUTOPT':'PRD'}_TOKEN&gt;'</span> \\\n`+
+    `     <span class="c-flag">--data</span> <span class="c-str">'${esc(b)}'</span>`;
+}
+
+function main(){
+  const e=CUR; if(!e)return;
+  stopStream();   // API/모드 전환 시 진행 중인 실시간 스트림 종료
+  const isWs=e.kind==='ws', isOrder=e.kind==='order', isOauth=!!e.oauth;
+  const bodyStr = e.body? JSON.stringify(e.body,null,2):"";
+  $("#main").innerHTML=`
+   <div class="titlebar"><span class="badge b-${isOauth?'oauth':e.kind}">${esc(KIND_LABEL[isOauth?'oauth':e.kind]||e.kind)}</span>
+     <span class="nm">${esc(e.method)}</span><span class="lb">${esc(e.label||"")}</span>${(e.tr_code||e.tr_cd)?`<span class="trc">${esc(e.tr_code||e.tr_cd)}</span>`:''}</div>
+
+   <div class="modebar">
+     <span class="mlabel">실행 방식</span>
+     <div class="seg">
+       <button class="${MODE==='example'?'on':''}" onclick="setMode('example')">Example</button>
+       <button class="${MODE==='sdk'?'on':''}" onclick="setMode('sdk')">SDK</button>
+     </div>
+     <span class="mhint">${MODE==='sdk'?(isWs?'client.create_websocket() + add_realtime()':'await client.apis.'+esc(e.group)+'.'+esc(e.method)+'(...)'):(isWs?'dbsec_helper.ws_subscribe() (예제)':'call_rest 와 동일한 raw 요청 (예제)')}</span>
+   </div>
+
+   <div class="sec"><div class="h">Credentials</div><div id="creds">${credsHtml()}</div></div>
+
+   ${isWs?`
+   <div class="sec"><div class="h">WebSocket</div>
+     <div class="urlbar"><div class="m">${e.is_ov_futopt?'7071':'7070'} ▾</div>
+       <div class="u">tr_cd=${esc(e.tr_cd)} · tr_type=${esc(e.tr_type)} · ${esc(e.group_slug)}</div></div></div>
+   <div class="sec"><div class="h">TR_KEY (편집 가능 · 종목코드 등)</div>
+     <input class="wskey" id="wskey" spellcheck="false" autocomplete="off"
+        placeholder="예: 005930 (구독 키가 없는 TR 은 비워둠)" value="${esc(e.tr_key||'')}"></div>
+   `:isOauth?`
+   <div class="sec"><div class="h">URL</div>
+     <div class="urlbar"><div class="m">POST ▾</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
+   <div class="sec"><div class="h">대상 키</div>
+     <div class="seg theme" style="margin-bottom:8px">
+       <button class="${OAUTHKEY==='prd'?'on':''}" onclick="setOauthKey('prd')">일반</button>
+       <button class="${OAUTHKEY==='ov_futopt'?'on':''}" onclick="setOauthKey('ov_futopt')">해외선옵</button>
+     </div>
+     <div class="kv">${e.oauth==='issue'?'config.yaml 의 선택한 키로 토큰을 발급해 위 ACCESS TOKEN 칸에 자동으로 채웁니다.':'선택한 키의 ACCESS TOKEN(위 입력칸)을 폐기하고 칸을 비웁니다.'}</div></div>
+   `:`
+   <div class="sec"><div class="h">URL</div>
+     <div class="urlbar"><div class="m">POST ▾</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
+
+   <div class="sec"><div class="h">Request Body (편집 가능)</div>
+     <div class="codehead"><span class="t">body (JSON)</span></div>
+     <textarea class="body" id="body" spellcheck="false">${esc(bodyStr)}</textarea></div>
+   `}
+
+   <div class="sec"><div class="codehead"><span class="t" id="codetitle"></span>
+       <button class="copy" onclick="copyCurl()">⧉ 복사</button></div>
+     <pre class="code" id="curl"></pre></div>
+
+   ${isOrder?`<div class="warn"><input type="checkbox" id="allowOrder">
+     <label for="allowOrder">⚠️ 실거래(주문) — 체크해야 실행됩니다. 실제 매매가 발생할 수 있습니다.</label></div>`:""}
+
+   <div class="actions">
+     <button class="tryit" id="try" onclick="tryIt()">Try It!</button>
+     <span class="empty" id="hint">${isWs?'연결→구독 후 실시간 수신을 한 화면에서 갱신 표시 (⏹ 중지로 종료)':'요청을 전송하고 응답을 표시합니다.'}</span>
+   </div>
+
+   <div class="sec resp" style="margin-top:18px">
+     <div class="codehead" style="border-radius:9px 9px 0 0"><span class="t">Response</span>
+       <button class="copy" onclick="copyResp()">⧉ 복사</button></div>
+     <div class="card" style="padding:14px;border-top:0;border-radius:0 0 9px 9px"><div id="resp" class="empty">Try It! 을 눌러 응답을 확인하세요.</div></div></div>`;
+  updateCode();
+  const ta=$("#body"); if(ta) ta.addEventListener('input', updateCode);
+  const wk=$("#wskey"); if(wk) wk.addEventListener('input', updateCode);
+  renderSpec(e);   // 우측 In/Out 명세 패널 갱신
+}
+
+function parseBody(){ const ta=$("#body"); if(!ta)return null; try{return JSON.parse(ta.value);}catch(e){alert("body JSON 파싱 오류: "+e.message);throw e;} }
+
+async function issue(kind){
+  try{
+    const j=await (await fetch(API+'/token',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({kind})})).json();
+    if(j.error){alert(j.error);return;}
+    TOKENS[kind]=j.token; saveTokens();
+    const inp=$("#tok_"+kind); if(inp) inp.value=j.token;
+    const d=$("#dot_"+kind); if(d) d.className="dot on";
+  }catch(e){ alert("발급 실패: "+e); }
+}
+
+function copyCurl(){ navigator.clipboard.writeText($("#curl").innerText); }
+function copyResp(){ const pre=document.querySelector('#resp pre.code'); const r=$("#resp"); navigator.clipboard.writeText(pre?pre.innerText:(r?r.innerText:'')); }
+
+async function tryIt(){
+  const e=CUR; const resp=$("#resp");
+  if(e.oauth){ return oauthRun(e); }                       // OAuth 발급/폐기 (form-urlencoded)
+  const token = TOKENS[curTokenKind()]||"";
+  if(!token){ const inp=$("#tok_"+curTokenKind()); if(inp) inp.focus();
+    resp.innerHTML=`<span class="pill bad"><span class="d"></span>토큰 필요</span> ${curTokenKind()==='ov_futopt'?'해외선옵':'일반'} ACCESS TOKEN 을 입력하거나 [발급] 하세요.`; return; }
+  if(e.kind==='ws'){ startStream(e, token); return; }     // WebSocket → 실시간 스트림(SSE)
+  const btn=$("#try"); btn.disabled=true; btn.textContent="실행중…";
+  try{
+    let body=null; try{ body=parseBody(); }catch(_){ btn.disabled=false; btn.textContent="Try It!"; return; }
+    const allow_order = e.kind==='order' && $("#allowOrder") && $("#allowOrder").checked;
+    const j=await (await fetch(API+'/call',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:e.id,body,allow_order,token,mode:MODE})}).catch(x=>({json:()=>({error:String(x)})}))).json();
+    renderResp(j);
+  }catch(x){ resp.innerHTML=`<span class="pill bad"><span class="d"></span>오류</span> ${esc(String(x))}`; }
+  btn.disabled=false; btn.textContent="Try It!";
+}
+
+async function oauthRun(e){
+  const btn=$("#try"), resp=$("#resp"), key=OAUTHKEY;
+  const token = e.oauth==='revoke' ? (TOKENS[key]||"") : "";
+  if(e.oauth==='revoke' && !token){ const inp=$("#tok_"+key); if(inp) inp.focus();
+    resp.innerHTML=`<span class="pill bad"><span class="d"></span>토큰 필요</span> 폐기할 ${key==='ov_futopt'?'해외선옵':'일반'} ACCESS TOKEN 을 입력하세요.`; return; }
+  btn.disabled=true; btn.textContent="실행중…";
+  try{
+    const j=await (await fetch(API+'/call',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:e.id,key_kind:key,token})}).catch(x=>({json:()=>({error:String(x)})}))).json();
+    if(j.issued_token){ TOKENS[key]=j.issued_token; saveTokens(); const i=$("#tok_"+key); if(i)i.value=j.issued_token; const d=$("#dot_"+key); if(d)d.className='dot on'; }
+    if(j.revoked){ TOKENS[key]=''; saveTokens(); const i=$("#tok_"+key); if(i)i.value=''; const d=$("#dot_"+key); if(d)d.className='dot'; }
+    renderResp(j);
+  }catch(x){ resp.innerHTML=`<span class="pill bad"><span class="d"></span>오류</span> ${esc(String(x))}`; }
+  btn.disabled=false; btn.textContent="Try It!";
+}
+
+// ── WebSocket 실시간 스트림 (SSE) — 최신 1건을 한 화면에서 제자리 갱신 ──
+let _es=null;
+function _hms(){ const d=new Date(); return d.toTimeString().slice(0,8); }
+function stopStream(){ if(_es){ try{_es.close();}catch(_){}; _es=null; } }
+function streamView(state, info){
+  const secs=Math.max(0,(Date.now()-info.startT)/1000).toFixed(0), live=state==='live';
+  const pill = state==='err' ? `<span class="pill bad"><span class="d"></span>오류</span>`
+             : live ? `<span class="pill ok"><span class="d live"></span>수신중</span>`
+             : `<span class="pill ok"><span class="d"></span>종료</span>`;
+  let shown=null; if(info.last){ const {n, ...rest}=info.last; shown=rest; }   // 카운터 n 은 숨김(헤더에 표시)
+  const note = info.msg
+    ? `<div class="kv" style="color:var(--red)">${esc(info.msg)}</div>`
+    : `<div class="kv">${live?'실시간 수신을 한 화면에서 갱신합니다.  ⏹ 중지로 종료.':'스트림 종료. 다시 Try It! 으로 재시작.'}</div>`;
+  const guide = `<div class="kv" style="color:var(--muted)">💡 세션 수 초과·연결 유량(1분 6회) 초과로 연결이 안 되면 <b style="color:var(--text)">ws_common › ws_session_disconnect</b> 를 호출해 세션을 초기화한 뒤 재시도하세요.</div>`;
+  $("#resp").innerHTML = `<div class="status">${pill}
+     <span>${info.count}건 · ${secs}s · ${esc(info.open?info.open.url:'')} · ${esc(MODE.toUpperCase())}${info.open?' · key:'+esc(info.open.used_key):''}</span>
+     <span style="margin-left:auto;color:var(--muted)">${live?'갱신 '+_hms():''}</span></div>
+   ${note}${guide}
+   <pre class="code" style="border-radius:9px;max-height:430px">${shown?esc(JSON.stringify(shown,null,2)):'(수신 대기…)'}</pre>`;
+}
+function startStream(e, token){
+  stopStream();
+  const info={count:0,last:null,open:null,startT:Date.now(),msg:''};
+  const setBtn=(stop)=>{ const b=$("#try"); if(!b)return; b.disabled=false;
+    if(stop){ b.textContent="⏹ 중지"; b.classList.add('stop'); b.onclick=()=>finalize('end'); }
+    else { b.textContent="Try It!"; b.classList.remove('stop'); b.onclick=tryIt; } };
+  let ended=false;
+  function finalize(state){ if(ended)return; ended=true; try{es.close();}catch(_){}; if(_es===es)_es=null; setBtn(false); streamView(state,info); }
+  setBtn(true); streamView('live',info);
+  const url=API+'/ws_stream?id='+encodeURIComponent(e.id)+'&token='+encodeURIComponent(token)+'&mode='+encodeURIComponent(MODE)+'&tr_key='+encodeURIComponent(curTrKey());
+  const es=new EventSource(url); _es=es;
+  es.addEventListener('opened',ev=>{ try{info.open=JSON.parse(ev.data);}catch(_){}; streamView('live',info); });
+  es.addEventListener('msg',ev=>{ try{const d=JSON.parse(ev.data); info.count=d.n; info.last=d;}catch(_){}; streamView('live',info); });
+  es.addEventListener('err',ev=>{ try{info.msg=JSON.parse(ev.data).error;}catch(_){}; finalize('err'); });
+  es.addEventListener('ended',ev=>{ try{info.count=JSON.parse(ev.data).count||info.count;}catch(_){}; finalize('end'); });
+  es.onerror=()=>finalize('end');      // 연결 종료 시 close → 자동 재연결 방지
+}
+
+function renderResp(j){
+  const resp=$("#resp");
+  if(j.blocked||j.error){ resp.innerHTML=`<div class="status"><span class="pill bad"><span class="d"></span>${j.blocked?'차단됨':'오류'}</span></div><div>${esc(j.error||'')}</div>`; return; }
+  const ok = j.status===200 && (["","0","00000","200"].includes(String(j.rsp_cd)));
+  const shown = j.json!=null ? j.json : {rsp_cd:j.rsp_cd, rsp_msg:j.rsp_msg};
+  resp.innerHTML=`<div class="status">
+     <span class="pill ${ok?'ok':'bad'}"><span class="d"></span>${j.status==null?'-':j.status}</span>
+     <span>rsp_cd=<b>${esc(j.rsp_cd||'-')}</b> ${esc(j.rsp_msg||'')}</span>
+     <span style="margin-left:auto;color:var(--muted)">${esc((j.mode||'').toUpperCase())} · key: ${esc(j.used_key)}</span></div>
+   ${j.sdk_raises?`<div class="kv" style="color:var(--blue)">ⓘ SDK 는 업무 에러코드를 <b>${esc(j.sdk_raises)}</b> 예외로 표면화합니다 (예제/raw 경로는 본문을 그대로 반환).</div>`:''}
+   <pre class="code" style="border-radius:9px;max-height:380px">${esc(JSON.stringify(shown,null,2))}</pre>`;
+}
+
+function renderWs(j){
+  const resp=$("#resp");
+  if(j.error){ resp.innerHTML=`<span class="pill bad"><span class="d"></span>오류</span> ${esc(j.error)}`; return; }
+  const g=j.graceful;
+  resp.innerHTML=`<div class="status">
+     <span class="pill ${g?'ok':'bad'}"><span class="d"></span>${g?'graceful 종료':'실패'}</span>
+     <span>수신 ${j.count}건 · ${esc((j.mode||'').toUpperCase())} · key: ${esc(j.used_key)} · ${esc(j.url||'')}</span></div>
+   ${j.errors&&j.errors.length?`<div class="kv" style="color:var(--red)">${esc(j.errors.join(' | '))}</div>`:''}
+   <pre class="code" style="border-radius:9px;max-height:360px">${esc(JSON.stringify(j.messages,null,2))}</pre>
+   <div class="kv">${j.mode==='sdk'?'SDK(DBSecWebSocket): 소켓 강제 드롭 후':'Example(helper): 취소(Ctrl+C 등가) 후'} 예외 없이 정리되면 graceful = 정상.</div>`;
+}
+
+load();
+</script>
+</body>
+</html>
