@@ -91,6 +91,7 @@
 | **WebSocket 자동화** | 연결·재연결(exponential backoff)·구독 복원·종료 라이프사이클 내장 |
 | **개별 실행 가능 예제** | `examples/<group>/<method>.py` — 복사 → 값만 바꿔 실행 |
 | **LLM · AI 에이전트 친화** | [`llms.txt`](llms.txt)(저장소 구조·명세·예제 안내) + 코드 어시스턴트 MCP 서버 — LLM·AI 에이전트가 API를 쉽게 탐색 |
+| **웹 API 테스터** | [`web_test/`](web_test/) — 브라우저에서 전체 API를 버튼 한 번으로 실행. In/Out 필드 명세 패널·Example/SDK 전환·cURL 미리보기 제공 (`python web_test/server.py`) |
 
 ---
 
@@ -337,6 +338,11 @@ dbsec-open-api/
 │   ├── sync.py                             #   GitHub 강제 동기화 fetch+reset (commit/push 없음)
 │   ├── catalog.py                          #   examples + api_support_matrix.md 파싱 인덱스
 │   └── server.py                           #   FastMCP tools (list/search/spec/sample/guide)
+│
+├── web_test/                               # 웹 API 테스터 (python web_test/server.py → http://127.0.0.1:8765)
+│   ├── server.py                           #   로컬 프록시 — 토큰 발급·REST 대리 호출·WS 실시간 스트림(SSE)
+│   ├── catalog.py                          #   examples 스캔 → API 목록·In/Out 명세 구성
+│   └── index.html                          #   UI (목록·Try It!·In/Out 명세 패널, 라이트/다크)
 │
 ├── HOWTOUSE.md                             # 초보자용 단계별 사용 가이드
 └── docs/                                   # 가이드 문서

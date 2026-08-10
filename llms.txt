@@ -21,6 +21,10 @@
 
 - [mcp_server/](mcp_server/): stdio MCP server that lets LLM coding tools (Claude Desktop/Code, Cursor, etc.) query the API catalog, In/Out parameter specs, and runnable sample code. Tools: `list_api_groups`, `search_apis`, `get_api_spec`, `get_sample_code`, `get_setup_guide` (plus prompts `dbsec_easy_code` / `dbsec_detailed_code` and resource `dbsec://catalog`). It parses `examples/` as the spec source and enriches with `api_support_matrix.md`.
 
+## Web API Tester
+
+- [web_test/](web_test/): Local browser tool to execute every API with one click (`python web_test/server.py` → http://127.0.0.1:8765). Shows In/Out field reference per API, editable request body, cURL preview, Example/SDK execution modes, and real-time WebSocket streaming. Order APIs are disabled by default behind an explicit checkbox. Useful for verifying request/response shapes before writing code.
+
 ## Official Resources
 
 - [DB증권 Open API 포털](https://openapi.dbsec.co.kr): Official DB Securities Open API portal — API guide, TR specs (InBlock/OutBlock), authentication, and application.

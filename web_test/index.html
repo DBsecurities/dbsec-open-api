@@ -22,7 +22,8 @@
     --sb:rgba(255,255,255,.16); --sb-h:rgba(255,255,255,.32);
     --hair:rgba(255,255,255,.07);                        /* 리스트 내부 극저대비 구분선 */
     --ring:rgba(63,185,80,.4);                           /* 입력 포커스 링 */
-    --mono:"SFMono-Regular",Consolas,"Liberation Mono",monospace;
+    /* 모노: 영문·코드는 Consolas, 한글 글리프는 Pretendard 로 폴백 (맑은고딕 낙하 방지) */
+    --mono:"SFMono-Regular",Consolas,"Liberation Mono","Pretendard Variable",Pretendard,monospace;
   }
   :root[data-theme="light"]{
     /* ── LIGHT ── */
@@ -92,7 +93,7 @@
   .grp .gcount{margin-left:auto;color:var(--muted);font-weight:400}
   .item{display:flex;align-items:center;justify-content:space-between;gap:8px;
     margin-left:8px;padding:7px 10px;border-radius:7px;cursor:pointer}
-  .item:hover{background:var(--panel)}
+  .item:hover{background:var(--sel-bg)}
   .item.sel{background:var(--sel-bg)}
   .inm{font-size:13px;font-weight:500;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .item .nm{font-family:var(--mono);font-size:13px;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
