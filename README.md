@@ -28,6 +28,7 @@
 - **`dbsec_sdk/`** 인증·HTTP 클라이언트·WebSocket 클라이언트
 - **`examples/`** — 그룹별 디렉토리 안에 API당 1파일(`<method>.py`) — 모두 standalone 으로 단독 실행 가능
 - **`mcp_server/`** — LLM 코딩 도구(Claude Code·Cursor 등)가 API 그룹·명세·샘플코드를 조회하는 코드 어시스턴트 MCP 서버
+- **`web_test/`** — 브라우저에서 전체 API를 버튼 한 번으로 실행해 보는 웹 API 테스터 (In/Out 필드 명세·Example/SDK 전환·cURL 미리보기)
 - **MCP·LLM 친화 네이밍** — 메서드 이름만 봐도 시장 도메인이 식별되도록 `kr_stock_*`, `ov_stock_*`, `kr_futopt_*`, `ov_futopt_*`, `bond_*` 접두어 일관 적용
 
 ### 대상 사용자
