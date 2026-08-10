@@ -205,10 +205,17 @@ class Catalog:
 
 # ── api_support_matrix.md 보강 ───────────────────────────
 _RE_MATRIX_ROW = re.compile(r"^\|(.+)\|\s*$")
+_RE_MATRIX_LINK = re.compile(r"^\[(.+)\]\([^)]*\)$")            # [text](링크) → text (greedy: 이름 속 대괄호 허용)
+_RE_MATRIX_SLUG = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")
 
 
 def _parse_matrix(path: Path) -> dict[str, dict]:
-    """{method_slug: {name, tr_code, demo, tps}}. 컬럼: 구분|API명|TR코드|메서드|모의투자|TPS"""
+    """{method_slug: {name, tr_code, demo, tps}}.
+
+    컬럼(현행): API명|TR코드|메서드|모의투자|TPS — 그룹별(### 소제목) 표
+    컬럼(구식): 구분|API명|TR코드|메서드|모의투자|TPS  (하위호환)
+    API명/메서드 셀은 [text](소스링크) 형태일 수 있다.
+    """
     if not path.exists():
         return {}
     out = {}
@@ -216,11 +223,20 @@ def _parse_matrix(path: Path) -> dict[str, dict]:
         m = _RE_MATRIX_ROW.match(line.strip())
         if not m:
             continue
-        cols = [c.strip().strip("`") for c in m.group(1).split("|")]
-        if len(cols) < 6 or cols[0] in ("구분", "") or set(cols[0]) <= {"-", ":"}:
+        cols = []
+        for c in m.group(1).split("|"):
+            c = c.strip()
+            lm = _RE_MATRIX_LINK.match(c)
+            if lm:
+                c = lm.group(1).strip()
+            cols.append(c.strip("`"))
+        if len(cols) < 5 or cols[0] in ("구분", "API 명", "") or set(cols[0]) <= {"-", ":"}:
             continue
-        _, name, tr_code, slug, demo, tps = cols[:6]
-        if slug:
+        if len(cols) >= 6 and _RE_MATRIX_SLUG.match(cols[3] or ""):      # 구식: 구분 열 포함
+            _, name, tr_code, slug, demo, tps = cols[:6]
+        else:                                                            # 현행: 5열
+            name, tr_code, slug, demo, tps = cols[:5]
+        if slug and _RE_MATRIX_SLUG.match(slug):
             out[slug] = {"name": name, "tr_code": tr_code,
                          "demo": "⭕" in demo, "tps": tps if tps and tps != "-" else None}
     return out

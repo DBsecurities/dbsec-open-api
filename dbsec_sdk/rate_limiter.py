@@ -48,6 +48,8 @@ DEFAULT_TPS = 1   # 매트릭스에 TPS 가 없는 엔드포인트 기본값
 _MATRIX_MD = Path(__file__).resolve().parent.parent / "docs" / "api_support_matrix.md"
 # 메서드 슬러그 패턴: 소문자/숫자 + 밑줄 1개 이상 (TR코드·한글 컬럼과 구분)
 _METHOD_RE = re.compile(r"^[a-z][a-z0-9]*(?:_[a-z0-9]+)+$")
+# 마크다운 링크 셀 [text](url) → text (매트릭스의 메서드 셀이 소스 링크를 가질 수 있음)
+_LINK_RE = re.compile(r"^\[([^\]]+)\]\([^)]*\)$")
 
 
 def _matrix_method_tps() -> dict[str, int]:
@@ -65,7 +67,13 @@ def _matrix_method_tps() -> dict[str, int]:
         line = line.strip()
         if not line.startswith("|"):
             continue
-        cells = [c.strip().strip("`") for c in line.strip("|").split("|")]
+        cells = []
+        for c in line.strip("|").split("|"):
+            c = c.strip()
+            m2 = _LINK_RE.match(c)          # [`slug`](경로) → `slug`
+            if m2:
+                c = m2.group(1).strip()
+            cells.append(c.strip("`"))
         method = next((c for c in cells if _METHOD_RE.match(c)), None)
         tps = next((c for c in cells if c.isdigit()), None)
         if method and tps:
