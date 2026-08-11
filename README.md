@@ -255,6 +255,34 @@ python /절대경로/dbsec-open-api/mcp_server/run_server.py   # cwd 무관 (Cla
 
 ---
 
+## 웹 API 테스터
+
+`web_test/` 는 DB증권 Open API **전체를 브라우저에서 버튼 한 번으로 실행**해 보는 로컬 웹 도구입니다.
+좌측 목록에서 API 를 고르면 요청/응답을 한 화면에서 확인·전송할 수 있고, 우측에 **요청(In)·응답(Out)
+필드 명세**가 표시됩니다. 목록·명세의 **원본은 `examples/`**(+`docs/api_support_matrix.md`)로 MCP 서버와
+동일하며, 별도 서버 없이 표준 라이브러리(+requests·pyyaml)만으로 동작합니다.
+
+| 기능 | 설명 |
+|---|---|
+| 전체 API 목록 | 그룹별 정렬·검색·종류(전체/주문/시세·조회/실시간) 필터 |
+| In/Out 명세 패널 | 선택한 API 의 요청(In)·응답(Out) 필드(이름·타입·설명) 표시 |
+| Example / SDK 전환 | 같은 API 를 `call_rest`(예제) 또는 `client.apis.*`(SDK) 로 실행 — 코드 스니펫도 함께 |
+| 원클릭 실행(Try It!) | 요청 전송 → 응답(JSON)·상태·수행시간 즉시 표시, body 편집 가능 |
+| WebSocket 실시간 | 연결→구독→실시간 수신을 한 화면에서 갱신(SSE) |
+| 주문 안전장치 | 주문(실거래) API 는 기본 **비활성**, 체크박스로 명시 동의해야 실행 |
+
+```bash
+python web_test/server.py   # → http://127.0.0.1:8765 (브라우저로 열기)
+```
+
+- 목록은 기동 시 로컬 `examples/` 를 스캔해 구성하며, 기동 직전 **`git pull --ff-only`** 로 원격과
+  동기화하므로 **GitHub 에 API 가 추가돼도 재시작만 하면** 반영됩니다(로컬 커밋은 보존, 오프라인은 건너뜀).
+- 인증은 **access token 입력** 방식이며, 없으면 `[발급]` 으로 `config.yaml` 의 실전 키에서 자동 발급합니다
+  (키는 서버에만 있고 페이지로 전송하지 않음).
+- 자세한 사용법·구성은 **[web_test/README.md](web_test/README.md)** 참고.
+
+---
+
 ## 모의투자 OpenAPI 신청 안내
 
 OpenAPI 모의투자 서비스를 신청하기 전에, **DB증권 홈페이지에서 상시모의투자 참가신청**이 먼저 필요합니다.
