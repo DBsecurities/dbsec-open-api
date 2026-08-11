@@ -81,6 +81,25 @@
   .brand .bt{font-size:20px;font-weight:800;color:var(--title);letter-spacing:-.3px;position:relative;top:2.4px}
   .brand .bt .api{color:var(--accent)}
   .sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 8px}
+  .hleft{display:flex;align-items:center;gap:5px}
+  .histbtn{background:transparent;border:0;color:var(--muted);width:26px;height:24px;border-radius:6px;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;padding:0}
+  .histbtn:hover{background:var(--panel2);color:var(--text)}
+  /* ── 요청 이력 모달 ── */
+  .overlay{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-start;justify-content:center;z-index:50;padding-top:9vh}
+  .overlay.show{display:flex}
+  .modal{background:var(--panel);border-radius:12px;width:540px;max-width:92vw;max-height:72vh;display:flex;flex-direction:column}
+  .mhead{display:flex;align-items:center;justify-content:space-between;padding:14px 16px 10px}
+  .mhead .t{font-size:14px;font-weight:700;color:var(--title)}
+  .mbody{overflow:auto;padding:0 8px 12px}
+  .hrow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer}
+  .hrow:hover{background:var(--sel-bg)}
+  .hrow .hd{width:8px;height:8px;border-radius:50%;flex:none}
+  .hrow .hd.ok{background:var(--green)} .hrow .hd.bad{background:var(--red)}
+  .hrow .hl{font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .hrow .hm{font-size:10.5px;color:var(--muted);flex:none}
+  .hrow .htime{margin-left:auto;font-size:11px;color:var(--muted);flex:none}
+  .hempty{padding:20px;color:var(--muted);font-size:12.5px;text-align:center}
   .side h1{font-size:13px;letter-spacing:.5px;color:var(--head);margin:0;text-transform:uppercase}
   .search{margin:0 12px 8px}
   .search input{width:100%;background:var(--input);border:0;color:var(--text);
@@ -200,7 +219,10 @@
       <span class="bt">Open <span class="api">API</span></span>
     </div>
     <div class="sidehead">
-      <h1>API 목록 <span id="count" style="color:var(--muted)"></span></h1>
+      <div class="hleft">
+        <h1>API 목록 <span id="count" style="color:var(--muted)"></span></h1>
+        <button class="histbtn" title="요청 이력" onclick="openHist()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></button>
+      </div>
       <div class="seg theme" id="themeseg">
         <button data-t="light" title="라이트" onclick="setTheme('light')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg></button>
         <button data-t="dark" title="다크" onclick="setTheme('dark')"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg></button>
@@ -220,6 +242,18 @@
     <div class="spech">INPUT / OUTPUT</div>
     <div class="empty">API 를 선택하면 요청(In)·응답(Out) 필드 명세가 표시됩니다.</div>
   </aside>
+</div>
+
+<div class="overlay" id="histov" onclick="if(event.target===this)closeHist()">
+  <div class="modal">
+    <div class="mhead"><span class="t">요청 이력</span>
+      <div style="display:flex;gap:6px">
+        <button class="mini" onclick="clearHist()">이력 삭제</button>
+        <button class="mini" onclick="closeHist()">닫기</button>
+      </div>
+    </div>
+    <div class="mbody" id="histlist"></div>
+  </div>
 </div>
 
 <script>
@@ -510,6 +544,49 @@ async function issue(kind){
   }catch(e){ alert("발급 실패: "+e); }
 }
 
+// ── 요청 이력 (localStorage · 최대 50건 · REST/OAuth 실행 시 자동 저장) ──
+let HIST=[]; try{HIST=JSON.parse(localStorage.getItem('dbsec_history')||'[]');}catch(_){}
+function saveHist(){ try{localStorage.setItem('dbsec_history',JSON.stringify(HIST));}catch(_){} }
+function recordHist(e,mode,body,j){
+  if(!j) return;
+  let resp=j;
+  try{ if(JSON.stringify(j).length>30000) resp={...j,json:null,_trimmed:true}; }catch(_){ resp=null; }
+  const ok = !j.error && !j.blocked && j.status===200 && ["","0","00000","200"].includes(String(j.rsp_cd??""));
+  HIST.unshift({t:Date.now(), id:e.id, label:e.label||e.method, method:e.method,
+                mode, status:j.status, rsp_cd:j.rsp_cd, ok, body:body||null, resp});
+  if(HIST.length>50) HIST.length=50;
+  saveHist();
+}
+function openHist(){ renderHist(); document.getElementById('histov').classList.add('show'); }
+function closeHist(){ document.getElementById('histov').classList.remove('show'); }
+function clearHist(){ HIST=[]; saveHist(); renderHist(); }
+function renderHist(){
+  const el=document.getElementById('histlist');
+  if(!HIST.length){ el.innerHTML='<div class="hempty">아직 요청 이력이 없습니다 — Try It! 실행 시 자동 저장됩니다.</div>'; return; }
+  el.innerHTML=HIST.map((h,i)=>`<div class="hrow" onclick="restoreHist(${i})">
+    <span class="hd ${h.ok?'ok':'bad'}"></span>
+    <span class="hl">${esc(h.label)}</span>
+    <span class="hm">${esc((h.mode||'').toUpperCase())}${h.rsp_cd?` · ${esc(h.rsp_cd)}`:''}</span>
+    <span class="htime">${new Date(h.t).toLocaleTimeString('ko-KR',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span></div>`).join('');
+}
+function restoreHist(i){
+  const h=HIST[i]; if(!h) return;
+  closeHist();
+  const api=CAT.find(x=>x.id===h.id);
+  if(api){
+    CUR=api; render(); main();
+    const ta=$("#body");
+    if(ta && h.body){ ta.value=JSON.stringify(h.body,null,2); updateCode(); }
+  }
+  if(h.resp){
+    renderResp(h.resp);
+    const r=$("#resp");
+    if(r) r.insertAdjacentHTML('afterbegin',
+      `<div class="kv" style="margin:0 0 8px">🕘 ${new Date(h.t).toLocaleString('ko-KR')} 이력 응답 — 다시 실행하려면 Try It!</div>`);
+  }
+}
+document.addEventListener('keydown',ev=>{ if(ev.key==='Escape') closeHist(); });
+
 function copyCurl(){ navigator.clipboard.writeText($("#curl").innerText); }
 function copyResp(){ const pre=document.querySelector('#resp pre.code'); const r=$("#resp"); navigator.clipboard.writeText(pre?pre.innerText:(r?r.innerText:'')); }
 
@@ -526,6 +603,7 @@ async function tryIt(){
     const allow_order = e.kind==='order' && $("#allowOrder") && $("#allowOrder").checked;
     const j=await (await fetch(API+'/call',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:e.id,body,allow_order,token,mode:MODE})}).catch(x=>({json:()=>({error:String(x)})}))).json();
     renderResp(j);
+    recordHist(e,MODE,body,j);
   }catch(x){ resp.innerHTML=`<span class="pill bad"><span class="d"></span>오류</span> ${esc(String(x))}`; }
   btn.disabled=false; btn.textContent="Try It!";
 }
@@ -541,6 +619,7 @@ async function oauthRun(e){
     if(j.issued_token){ TOKENS[key]=j.issued_token; saveTokens(); const i=$("#tok_"+key); if(i)i.value=j.issued_token; const d=$("#dot_"+key); if(d)d.className='dot on'; }
     if(j.revoked){ TOKENS[key]=''; saveTokens(); const i=$("#tok_"+key); if(i)i.value=''; const d=$("#dot_"+key); if(d)d.className='dot'; }
     renderResp(j);
+    recordHist(e,'oauth',null,j);
   }catch(x){ resp.innerHTML=`<span class="pill bad"><span class="d"></span>오류</span> ${esc(String(x))}`; }
   btn.disabled=false; btn.textContent="Try It!";
 }
