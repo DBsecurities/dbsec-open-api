@@ -350,7 +350,21 @@ function renderSpec(e){
   if(!e){ el.innerHTML=`<div class="spech">INPUT / OUTPUT</div>
     <div class="empty">API 를 선택하면 요청(In)·응답(Out) 필드 명세가 표시됩니다.</div>`; return; }
   const inf=e.in_fields||[];
-  const inRows=inf.map(fieldRow).join("");
+  // Input 도 Output 처럼 블록 헤더 표시 — 실제 body 의 최상위 오브젝트(In/In1 …)에서 파생
+  let inRows="";
+  const bodyBlocks=Object.entries(e.body||{}).filter(([k,v])=>v&&typeof v==='object'&&!Array.isArray(v));
+  if(bodyBlocks.length){
+    const used=new Set();
+    for(const [bn,bv] of bodyBlocks){
+      const fields=inf.filter(f=>Object.prototype.hasOwnProperty.call(bv,f.key));
+      if(!fields.length) continue;
+      inRows+=`<div class="fblk">${esc(bn)}<span class="ft">object</span></div>`;
+      for(const f of fields){ used.add(f.key); inRows+=fieldRow(f); }
+    }
+    inRows+=inf.filter(f=>!used.has(f.key)).map(fieldRow).join("");   // 블록 밖 필드(있다면)
+  }else{
+    inRows=inf.map(fieldRow).join("");   // WS 구독 파라미터 등 — 블록 없음
+  }
   // Output — Input 과 동일한 행 렌더 (블록 Out/Out1 은 구분 헤더로)
   const ob=e.out_blocks||[];
   const outCnt=ob.reduce((n,b)=>n+b.fields.length,0);
