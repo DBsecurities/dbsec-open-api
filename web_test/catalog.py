@@ -164,6 +164,11 @@ _RE_OUT_TR = re.compile(r"^\s*\[TR\s+([^\]]+)\]")
 _OUT_TYPE_MAP = {"문자": "str", "숫자": "num", "오브젝트": "object", "배열": "array"}
 
 
+def _dedash(s: str) -> str:
+    """UI 로 나가는 문자열의 em/en dash 를 hyphen 으로 정규화."""
+    return s.replace(" — ", " - ").replace("—", "-").replace("–", "-") if s else s
+
+
 def _parse_out_blocks(text: str) -> tuple[list[dict], str]:
     """OUT 섹션 텍스트를 구조화 — In 패널과 동일한 행 렌더링용.
 
@@ -186,7 +191,7 @@ def _parse_out_blocks(text: str) -> tuple[list[dict], str]:
             cur_tr, cur = m.group(1).strip(), None
             continue
         if line.strip().startswith("공통:"):
-            common = line.strip()
+            common = _dedash(line.strip())
             continue
         m = _RE_OUT_FIELD.match(line)
         if not m:
@@ -194,7 +199,7 @@ def _parse_out_blocks(text: str) -> tuple[list[dict], str]:
         key, typ, rest = m.group(2), m.group(3), m.group(4).strip()
         if re.fullmatch(r"Out\d*", key) and typ in ("오브젝트", "배열"):
             desc = rest.split("—", 1)[1].strip() if "—" in rest else ""
-            cur = new_block(key, _OUT_TYPE_MAP.get(typ, typ), desc)
+            cur = new_block(key, _OUT_TYPE_MAP.get(typ, typ), _dedash(desc))
             continue
         name, desc = rest, ""
         if "—" in rest:
@@ -202,7 +207,7 @@ def _parse_out_blocks(text: str) -> tuple[list[dict], str]:
         if cur is None:
             cur = new_block()
         cur["fields"].append({"key": key, "type": _OUT_TYPE_MAP.get(typ, typ),
-                              "name": name, "desc": desc})
+                              "name": _dedash(name), "desc": _dedash(desc)})
     return blocks, common
 
 
@@ -294,10 +299,12 @@ def build_catalog() -> list[dict]:
                     d = f.get("desc") or ""
                     if not nt and t:                   # 타입이 아닌 주석 → 설명 앞에 병합
                         d = d.lstrip(":-·— ").strip()
-                        d = f"{t} — {d}" if d else t
-                    in_fields.append({**f, "type": nt, "desc": d})
+                        d = f"{t} - {d}" if d else t
+                    in_fields.append({**f, "type": nt,
+                                      "name": _dedash(f.get("name") or ""),
+                                      "desc": _dedash(d)})
                 e["in_fields"] = in_fields            # [{key, example, name, type, desc}]
-                e["out_text"] = api.out_text          # OUT_BEGIN~OUT_END 원문 (폴백용)
+                e["out_text"] = _dedash(api.out_text)  # OUT_BEGIN~OUT_END 원문 (폴백용)
                 e["out_blocks"], e["out_common"] = _parse_out_blocks(api.out_text)
                 e["tr_code"] = api.tr_code or e.get("tr_cd") or ""
     except Exception as ex:
