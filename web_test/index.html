@@ -72,9 +72,10 @@
     font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--code-text);white-space:pre-wrap;word-break:break-all}
   /* ── 사이드바 (API 목록) ── */
   .side{display:flex;flex-direction:column;min-height:0;background:var(--side)}
-  .brand{display:flex;align-items:center;gap:3px;padding:14px 12px 4px}
-  .brand img{height:40px;width:auto;display:block}
-  .brand .bt{font-size:16px;font-weight:800;color:var(--title);letter-spacing:-.3px}
+  .brand{display:flex;align-items:center;gap:6px;padding:14px 12px 4px}
+  .brand img{height:38px;width:auto;display:block}
+  /* top 2.4px: 로고 워드마크(DB증권)의 광학 중심이 이미지의 56.2% 지점이라 그만큼 내려 맞춤 */
+  .brand .bt{font-size:20px;font-weight:800;color:var(--title);letter-spacing:-.3px;position:relative;top:2.4px}
   .brand .bt .api{color:var(--accent)}
   .sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 8px}
   .side h1{font-size:13px;letter-spacing:.5px;color:var(--head);margin:0;text-transform:uppercase}
