@@ -522,7 +522,7 @@ function main(){
      <pre class="code" id="curl"></pre></div>
 
    ${isOrder?`<div class="warn"><input type="checkbox" id="allowOrder">
-     <label for="allowOrder">⚠️ 실거래(주문) — 체크해야 실행됩니다. 실제 매매가 발생할 수 있습니다.</label></div>`:""}
+     <label for="allowOrder">실거래(주문) — 체크해야 실행됩니다. 실제 매매가 발생할 수 있습니다.</label></div>`:""}
 
    <div class="actions">
      <button class="tryit" id="try" onclick="tryIt()">Try It!</button>
@@ -613,7 +613,7 @@ function restoreHist(i){
     renderResp(h.resp);
     const r=$("#resp");
     if(r) r.insertAdjacentHTML('afterbegin',
-      `<div class="kv" style="margin:0 0 8px">🕘 ${new Date(h.t).toLocaleString('ko-KR')} 이력 응답 — 다시 실행하려면 Try It!</div>`);
+      `<div class="kv" style="margin:0 0 8px">${new Date(h.t).toLocaleString('ko-KR')} 이력 응답 — 다시 실행하려면 Try It!</div>`);
   }
 }
 document.addEventListener('keydown',ev=>{ if(ev.key==='Escape') closeHist(); });
@@ -668,7 +668,7 @@ function streamView(state, info){
   const note = info.msg
     ? `<div class="kv" style="color:var(--red)">${esc(info.msg)}</div>`
     : `<div class="kv">${live?'실시간 수신을 한 화면에서 갱신합니다.  ⏹ 중지로 종료.':'스트림 종료. 다시 Try It! 으로 재시작.'}</div>`;
-  const guide = `<div class="kv" style="color:var(--muted)">💡 세션 수 초과(계좌당 2세션)로 연결이 안 되면 <b style="color:var(--text)">API 목록 › 공통 › 웹소켓 공통 › 웹소켓 세션 초기화</b> 를 호출해 세션을 초기화한 뒤 재시도하세요.</div>`;
+  const guide = `<div class="kv" style="color:var(--muted)">세션 수 초과(계좌당 2세션)로 연결이 안 되면 <b style="color:var(--text)">API 목록 › 공통 › 웹소켓 공통 › 웹소켓 세션 초기화</b> 를 호출해 세션을 초기화한 뒤 재시도하세요.</div>`;
   $("#resp").innerHTML = `<div class="status">${pill}
      <span>${info.count}건 · ${secs}s · ${esc(info.open?info.open.url:'')} · ${esc(MODE.toUpperCase())}${info.open?' · key:'+esc(info.open.used_key):''}</span>
      <span style="margin-left:auto;color:var(--muted)">${live?'갱신 '+_hms():''}</span></div>
