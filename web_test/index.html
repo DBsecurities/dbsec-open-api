@@ -558,7 +558,7 @@ function recordHist(e,mode,body,j){
   if(!j) return;
   let resp=j;
   try{ if(JSON.stringify(j).length>30000) resp={...j,json:null,_trimmed:true}; }catch(_){ resp=null; }
-  const ok = !j.error && !j.blocked && j.status===200 && ["","0","00000","200"].includes(String(j.rsp_cd??""));
+  const ok = !j.error && !j.blocked && j.status===200;   // HTTP 계층 기준 (rsp_cd 는 업무 코드)
   HIST.unshift({t:Date.now(), id:e.id, label:e.label||e.method, method:e.method,
                 mode, status:j.status, rsp_cd:j.rsp_cd, ok, body:body||null, resp});
   if(HIST.length>50) HIST.length=50;
@@ -574,6 +574,7 @@ function renderHist(){
   if(!HIST.length){ HIST_OPEN=-1; el.innerHTML='<div class="hempty">아직 요청 이력이 없습니다 — Try It! 실행 시 자동 저장됩니다.</div>'; return; }
   el.innerHTML=HIST.map((h,i)=>{
     const httpTxt = h.status==null ? '-' : (h.status===200 ? '200 OK' : String(h.status));
+    const ok = h.status===200;                 // 렌더 시 재계산 — 과거 저장분도 새 기준 적용
     const open = i===HIST_OPEN;
     let detail='';
     if(open){
@@ -593,7 +594,7 @@ function renderHist(){
       </div>`;
     }
     return `<div class="hrow ${open?'open':''}" onclick="toggleHist(${i})">
-      <span class="hbadge ${h.ok?'ok':'bad'}">${h.ok?'성공':'실패'}</span>
+      <span class="hbadge ${ok?'ok':'bad'}">${ok?'성공':'실패'}</span>
       <span class="hl">${esc(h.label)}</span>
       <span class="hm">${esc(httpTxt)}${h.rsp_cd?` · ${esc(h.rsp_cd)}`:''}</span>
       <span class="htime">${new Date(h.t).toLocaleTimeString('ko-KR',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span></div>`+detail;
@@ -695,7 +696,8 @@ function startStream(e, token){
 function renderResp(j){
   const resp=$("#resp");
   if(j.blocked||j.error){ resp.innerHTML=`<div class="status"><span class="pill bad"><span class="d"></span>${j.blocked?'차단됨':'오류'}</span></div><div>${esc(j.error||'')}</div>`; return; }
-  const ok = j.status===200 && (["","0","00000","200"].includes(String(j.rsp_cd)));
+  // 성공/실패는 HTTP 계층 기준 — rsp_cd 는 업무 코드(예: 2679 조회내역 없음)라 실패로 취급하지 않는다
+  const ok = j.status===200;
   const shown = j.json!=null ? j.json : {rsp_cd:j.rsp_cd, rsp_msg:j.rsp_msg};
   resp.innerHTML=`<div class="status">
      <span class="pill ${ok?'ok':'bad'}"><span class="d"></span>${j.status==null?'-':j.status}</span>
