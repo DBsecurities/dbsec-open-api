@@ -42,6 +42,9 @@
     --ring:rgba(45,164,78,.3);
   }
   *{box-sizing:border-box}
+  /* 폼 컨트롤은 body 폰트를 상속하지 않음(브라우저 기본) — Pretendard 상속 강제.
+     모노 입력칸(.tok/.wskey/textarea.body)은 클래스 셀렉터가 우선이라 var(--mono) 유지 */
+  button,input,textarea,select{font-family:inherit}
   /* 스크롤바 — 오버레이형(트랙 배경 없음, 얇고 둥근 thumb) */
   *{scrollbar-width:thin;scrollbar-color:var(--sb) transparent}
   ::-webkit-scrollbar{width:11px;height:11px}
