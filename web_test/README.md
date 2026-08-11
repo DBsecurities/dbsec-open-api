@@ -8,9 +8,16 @@ DB증권 OpenAPI 전체 API를 **웹에서 버튼 한 번으로 실행**해 보�
 ## 실행
 
 ```bash
+# 저장소 루트에서 실행하는 경우
 python web_test/server.py
-# → http://127.0.0.1:8765  (브라우저로 열기)
+
+# web_test/ 폴더 안에서 실행하는 경우
+python server.py
+
+# → 둘 다 http://127.0.0.1:8765  (브라우저로 열기)
 ```
+
+> 실행 위치와 무관하게 동작합니다 — `server.py` 가 자기 파일 위치로 저장소 경로를 계산합니다.
 
 - **인증은 access token 입력** 방식입니다 — key/secret 은 헤더에 싣지 않습니다.
   CREDENTIALS 칸에 토큰을 붙여넣으면 `Authorization: Bearer <token>` 으로 호출합니다.
