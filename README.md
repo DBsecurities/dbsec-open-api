@@ -1,4 +1,4 @@
-<h1 align="center">DB증권 Open API 샘플코드 (Python)</h1>
+<h1 align="center">DB증권 Open API 샘플코드</h1>
 
 <p align="center">
   <img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+">
