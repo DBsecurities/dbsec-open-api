@@ -445,11 +445,15 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/" or self.path.startswith("/index"):
             html = (HERE / "index.html").read_bytes()
             return self._send(200, html, "text/html; charset=utf-8")
-        if self.path == "/favicon.ico":
-            ico = HERE / "favicon.ico"
-            if ico.exists():
-                return self._send(200, ico.read_bytes(), "image/x-icon")
-            return self._send(404, {"error": "favicon 없음"})
+        # 정적 자산(favicon·로고 등) — HERE 디렉토리의 최상위 파일만 서빙(경로탐색 차단)
+        name = urlparse(self.path).path.lstrip("/")
+        if name and "/" not in name:
+            ctypes = {"ico": "image/x-icon", "png": "image/png", "svg": "image/svg+xml",
+                      "jpg": "image/jpeg", "jpeg": "image/jpeg", "gif": "image/gif"}
+            ext = name.rsplit(".", 1)[-1].lower() if "." in name else ""
+            f = HERE / name
+            if ext in ctypes and f.is_file() and f.parent == HERE:
+                return self._send(200, f.read_bytes(), ctypes[ext])
         if self.path == "/catalog":
             return self._send(200, {"catalog": CATALOG, "credentials": credentials()})
         if self.path.startswith("/ws_stream"):

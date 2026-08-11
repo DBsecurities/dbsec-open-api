@@ -72,7 +72,11 @@
     font-family:var(--mono);font-size:11px;line-height:1.6;color:var(--code-text);white-space:pre-wrap;word-break:break-all}
   /* ── 사이드바 (API 목록) ── */
   .side{display:flex;flex-direction:column;min-height:0;background:var(--side)}
-  .sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:14px 12px 8px}
+  .brand{display:flex;align-items:center;gap:9px;padding:16px 12px 4px}
+  .brand img{height:26px;width:auto;display:block;border-radius:4px}
+  .brand .bt{font-size:16px;font-weight:800;color:var(--title);letter-spacing:-.3px}
+  .brand .bt .api{color:var(--accent)}
+  .sidehead{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 12px 8px}
   .side h1{font-size:13px;letter-spacing:.5px;color:var(--head);margin:0;text-transform:uppercase}
   .search{margin:0 12px 8px}
   .search input{width:100%;background:var(--input);border:0;color:var(--text);
@@ -125,6 +129,7 @@
   .urlbar{display:flex;align-items:stretch;background:var(--panel2);border-radius:10px;overflow:hidden}
   .urlbar .m{display:flex;align-items:center;gap:6px;color:var(--muted);font-weight:700;
     padding:11px 13px;font-size:12px;white-space:nowrap}
+  .urlbar .m.mpost{color:var(--rest-tx)}
   .urlbar .u{font-family:var(--mono);font-size:13px;padding:11px 13px 11px 0;color:var(--text);overflow:auto;white-space:nowrap}
   .codewrap{position:relative}
   .codehead{display:flex;align-items:center;justify-content:space-between;background:var(--panel2);
@@ -185,6 +190,10 @@
 <body>
 <div class="app">
   <aside class="side">
+    <div class="brand">
+      <img src="dblogo.png" alt="DB증권">
+      <span class="bt">Open <span class="api">API</span></span>
+    </div>
     <div class="sidehead">
       <h1>API 목록 <span id="count" style="color:var(--muted)"></span></h1>
       <div class="seg theme" id="themeseg">
@@ -432,7 +441,7 @@ function main(){
         placeholder="예: 005930 (구독 키가 없는 TR 은 비워둠)" value="${esc(e.tr_key||'')}"></div>
    `:isOauth?`
    <div class="sec"><div class="h">URL</div>
-     <div class="urlbar"><div class="m">POST ▾</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
+     <div class="urlbar"><div class="m mpost">POST</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
    <div class="sec"><div class="h">대상 키</div>
      <div class="seg theme" style="margin-bottom:8px">
        <button class="${OAUTHKEY==='prd'?'on':''}" onclick="setOauthKey('prd')">일반</button>
@@ -441,7 +450,7 @@ function main(){
      <div class="kv">${e.oauth==='issue'?'config.yaml 의 선택한 키로 토큰을 발급해 위 ACCESS TOKEN 칸에 자동으로 채웁니다.':'선택한 키의 ACCESS TOKEN(위 입력칸)을 폐기하고 칸을 비웁니다.'}</div></div>
    `:`
    <div class="sec"><div class="h">URL</div>
-     <div class="urlbar"><div class="m">POST ▾</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
+     <div class="urlbar"><div class="m mpost">POST</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
 
    <div class="sec"><div class="h">Request Body (편집 가능)</div>
      <div class="codehead"><span class="t">body (JSON)</span></div>
