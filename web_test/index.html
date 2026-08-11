@@ -390,7 +390,7 @@ function credsHtml(){
      ${row('prd','ACCESS TOKEN — 일반 (국내·해외주식·채권·국내선옵)')}
      ${row('ov_futopt','ACCESS TOKEN — 해외선옵 (ov_futopt · 선택)')}
    </div>
-   <div class="kv">base_url = ${esc(BASEURL)} · 현재 API 인증 토큰: <b style="color:var(--accent)">${useK==='ov_futopt'?'해외선옵':'일반'}</b> · 발급/폐기는 목록 상단 <b style="color:var(--text)">auth › token_issue / token_revoke</b> 에서 (localStorage 저장)</div>`;
+   <div class="kv">base_url = ${esc(BASEURL)} · 현재 API 인증 토큰: <b style="color:var(--accent)">${useK==='ov_futopt'?'해외선옵':'일반'}</b> · 발급/폐기는 API 목록 최상단 <b style="color:var(--text)">인증 › 접근토큰 발급 / 접근토큰 폐기</b> 에서 (localStorage 저장)</div>`;
 }
 
 function curlHtml(e, body){
@@ -543,7 +543,7 @@ function streamView(state, info){
   const note = info.msg
     ? `<div class="kv" style="color:var(--red)">${esc(info.msg)}</div>`
     : `<div class="kv">${live?'실시간 수신을 한 화면에서 갱신합니다.  ⏹ 중지로 종료.':'스트림 종료. 다시 Try It! 으로 재시작.'}</div>`;
-  const guide = `<div class="kv" style="color:var(--muted)">💡 세션 수 초과·연결 유량(1분 6회) 초과로 연결이 안 되면 <b style="color:var(--text)">ws_common › ws_session_disconnect</b> 를 호출해 세션을 초기화한 뒤 재시도하세요.</div>`;
+  const guide = `<div class="kv" style="color:var(--muted)">💡 세션 수 초과(계좌당 2세션)로 연결이 안 되면 <b style="color:var(--text)">API 목록 › 공통 › 웹소켓 공통 › 웹소켓 세션 초기화</b> 를 호출해 세션을 초기화한 뒤 재시도하세요.</div>`;
   $("#resp").innerHTML = `<div class="status">${pill}
      <span>${info.count}건 · ${secs}s · ${esc(info.open?info.open.url:'')} · ${esc(MODE.toUpperCase())}${info.open?' · key:'+esc(info.open.used_key):''}</span>
      <span style="margin-left:auto;color:var(--muted)">${live?'갱신 '+_hms():''}</span></div>
