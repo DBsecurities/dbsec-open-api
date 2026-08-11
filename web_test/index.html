@@ -93,12 +93,19 @@
   .mhead .t{font-size:14px;font-weight:700;color:var(--title)}
   .mbody{overflow:auto;padding:0 8px 12px}
   .hrow{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;cursor:pointer}
-  .hrow:hover{background:var(--sel-bg)}
-  .hrow .hd{width:8px;height:8px;border-radius:50%;flex:none}
-  .hrow .hd.ok{background:var(--green)} .hrow .hd.bad{background:var(--red)}
+  .hrow:hover,.hrow.open{background:var(--sel-bg)}
+  .hbadge{flex:none;font-size:10px;font-weight:700;border-radius:4px;padding:1px 6px}
+  .hbadge.ok{background:var(--ok-bg);color:var(--ok-tx)}
+  .hbadge.bad{background:var(--bad-bg);color:var(--bad-tx)}
   .hrow .hl{font-size:12.5px;font-weight:600;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .hrow .hm{font-size:10.5px;color:var(--muted);flex:none}
+  .hrow .hm{font-size:11px;color:var(--muted);flex:none}
   .hrow .htime{margin-left:auto;font-size:11px;color:var(--muted);flex:none}
+  .hdetail{margin:2px 10px 10px;padding:10px 12px;background:var(--panel2);border-radius:8px}
+  .hdt{font-size:10.5px;font-weight:700;color:var(--head);text-transform:uppercase;margin:8px 0 4px}
+  .hdetail .hdt:first-child{margin-top:0}
+  .hpre{margin:0;font-family:var(--mono);font-size:11px;line-height:1.55;color:var(--code-text);
+    white-space:pre-wrap;word-break:break-all;max-height:180px;overflow:auto}
+  .hdetail .mini{margin-top:9px}
   .hempty{padding:20px;color:var(--muted);font-size:12.5px;text-align:center}
   .side h1{font-size:13px;letter-spacing:.5px;color:var(--head);margin:0;text-transform:uppercase}
   .search{margin:0 12px 8px}
@@ -560,14 +567,37 @@ function recordHist(e,mode,body,j){
 function openHist(){ renderHist(); document.getElementById('histov').classList.add('show'); }
 function closeHist(){ document.getElementById('histov').classList.remove('show'); }
 function clearHist(){ HIST=[]; saveHist(); renderHist(); }
+let HIST_OPEN=-1;   // 펼쳐진 이력 행 인덱스
+function toggleHist(i){ HIST_OPEN=(HIST_OPEN===i?-1:i); renderHist(); }
 function renderHist(){
   const el=document.getElementById('histlist');
-  if(!HIST.length){ el.innerHTML='<div class="hempty">아직 요청 이력이 없습니다 — Try It! 실행 시 자동 저장됩니다.</div>'; return; }
-  el.innerHTML=HIST.map((h,i)=>`<div class="hrow" onclick="restoreHist(${i})">
-    <span class="hd ${h.ok?'ok':'bad'}"></span>
-    <span class="hl">${esc(h.label)}</span>
-    <span class="hm">${esc((h.mode||'').toUpperCase())}${h.rsp_cd?` · ${esc(h.rsp_cd)}`:''}</span>
-    <span class="htime">${new Date(h.t).toLocaleTimeString('ko-KR',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span></div>`).join('');
+  if(!HIST.length){ HIST_OPEN=-1; el.innerHTML='<div class="hempty">아직 요청 이력이 없습니다 — Try It! 실행 시 자동 저장됩니다.</div>'; return; }
+  el.innerHTML=HIST.map((h,i)=>{
+    const httpTxt = h.status==null ? '-' : (h.status===200 ? '200 OK' : String(h.status));
+    const open = i===HIST_OPEN;
+    let detail='';
+    if(open){
+      const reqTxt = h.body ? JSON.stringify(h.body,null,2) : '(요청 본문 없음)';
+      let outTxt='(저장된 응답 없음)';
+      if(h.resp){
+        const shown = h.resp.json!=null ? h.resp.json
+                    : {rsp_cd:h.resp.rsp_cd, rsp_msg:h.resp.rsp_msg, error:h.resp.error};
+        outTxt = JSON.stringify(shown,null,2);
+        if(outTxt.length>4000) outTxt = outTxt.slice(0,4000)+'\n… (생략)';
+        if(h.resp._trimmed) outTxt = '(응답이 커서 본문은 저장되지 않음)';
+      }
+      detail=`<div class="hdetail">
+        <div class="hdt">요청 (Input)</div><pre class="hpre">${esc(reqTxt)}</pre>
+        <div class="hdt">응답 (Output)</div><pre class="hpre">${esc(outTxt)}</pre>
+        <button class="mini" onclick="event.stopPropagation();restoreHist(${i})">이 요청 화면으로 불러오기</button>
+      </div>`;
+    }
+    return `<div class="hrow ${open?'open':''}" onclick="toggleHist(${i})">
+      <span class="hbadge ${h.ok?'ok':'bad'}">${h.ok?'성공':'실패'}</span>
+      <span class="hl">${esc(h.label)}</span>
+      <span class="hm">${esc(httpTxt)}${h.rsp_cd?` · ${esc(h.rsp_cd)}`:''}</span>
+      <span class="htime">${new Date(h.t).toLocaleTimeString('ko-KR',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span></div>`+detail;
+  }).join('');
 }
 function restoreHist(i){
   const h=HIST[i]; if(!h) return;
