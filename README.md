@@ -26,10 +26,10 @@
 본 저장소는 DB증권 Open API를 위한 파이썬 샘플코드 저장소로, **생성형 AI 기반 바이브 코딩**(ChatGPT · Claude · Gemini)과 **전통적인 Python 개발 환경** 양쪽 모두에서 직관적으로 학습하고 실전에 적용할 수 있도록 설계되었습니다.
 
 - **`dbsec_sdk/`** 인증·HTTP 클라이언트·WebSocket 클라이언트
-- **`examples/`** — 그룹별 디렉토리 안에 API당 1파일(`<method>.py`) — 모두 standalone 으로 단독 실행 가능
-- **`mcp_server/`** — LLM 코딩 도구(Claude Code·Cursor 등)가 API 그룹·명세·샘플코드를 조회하는 코드 어시스턴트 MCP 서버
-- **`web_test/`** — 브라우저에서 전체 API를 버튼 한 번으로 실행해 보는 웹 API 테스터 (In/Out 필드 명세·Example/SDK 전환·cURL 미리보기)
-- **MCP·LLM 친화 네이밍** — 메서드 이름만 봐도 시장 도메인이 식별되도록 `kr_stock_*`, `ov_stock_*`, `kr_futopt_*`, `ov_futopt_*`, `bond_*` 접두어 일관 적용
+- **`examples/`** - 그룹별 디렉토리 안에 API당 1파일(`<method>.py`) - 모두 standalone 으로 단독 실행 가능
+- **`mcp_server/`** - LLM 코딩 도구(Claude Code·Cursor 등)가 API 그룹·명세·샘플코드를 조회하는 코드 어시스턴트 MCP 서버
+- **`web_test/`** - 브라우저에서 전체 API를 버튼 한 번으로 실행해 보는 웹 API 테스터 (In/Out 필드 명세·Example/SDK 전환·cURL 미리보기)
+- **MCP·LLM 친화 네이밍** - 메서드 이름만 봐도 시장 도메인이 식별되도록 `kr_stock_*`, `ov_stock_*`, `kr_futopt_*`, `ov_futopt_*`, `bond_*` 접두어 일관 적용
 
 ### 대상 사용자
 
@@ -66,15 +66,15 @@
 - [설정](#설정)
 - [사용법](#사용법)
   - [인증 (토큰 자동)](#1-인증-토큰-자동)
-  - [통합 API 호출 패턴 — `client.apis`](#2-통합-api-호출-패턴--clientapis)
-  - [국내주식 — 주문/조회](#3-국내주식--주문조회)
-  - [그 외 상품 — 해외주식 · 선물옵션 · 채권 · 차트 · WebSocket](#4-그-외-상품--해외주식--선물옵션--채권--차트--websocket)
+  - [통합 API 호출 패턴 - `client.apis`](#2-통합-api-호출-패턴--clientapis)
+  - [국내주식 - 주문/조회](#3-국내주식--주문조회)
+  - [그 외 상품 - 해외주식 · 선물옵션 · 채권 · 차트 · WebSocket](#4-그-외-상품--해외주식--선물옵션--채권--차트--websocket)
   - [DataFrame 변환](#5-dataframe-변환)
 - [전체 그룹 & API](#전체-그룹--api)
 - [메서드 네이밍 규칙 (도메인 접두어)](#메서드-네이밍-규칙-도메인-접두어)
 - [운영 vs 모의투자](#운영-vs-모의투자)
 - [오류코드 & 유량제어](#오류코드--유량제어)
-- [부록 — API 모의투자 지원 현황](#부록--api-모의투자-지원-현황)
+- [부록 - API 모의투자 지원 현황](#부록--api-모의투자-지원-현황)
 
 ---
 
@@ -83,25 +83,25 @@
 | 기능 | 내용 |
 |------|------|
 | **API 커버리지** | DB증권 Open API **전체 엔드포인트 커버** |
-| **비동기 클라이언트** | `DBSecClient` 는 **async** — `await client.apis.그룹.메서드(...)`. `asyncio.gather` 로 동시 호출 |
+| **비동기 클라이언트** | `DBSecClient` 는 **async** - `await client.apis.그룹.메서드(...)`. `asyncio.gather` 로 동시 호출 |
 | **단일 진입점** | 클라이언트 한 줄 생성으로 인증·토큰 캐싱·연속조회 자동 처리 |
 | **도메인 접두 메서드** | `kr_stock_order`, `ov_stock_inquire_balance_margin` 같이 메서드명만으로 시장 식별 (MCP 친화) |
 | **유량제어 자동** | 앱 20TPS + 엔드포인트별 TPS **2-tier** 자동 페이싱 → 서버 `IGW00201`(호출건수 초과) 사전 차단 |
 | **토큰 자동 발급/재발급** | `auto_token=True`(기본): 요청 시 토큰이 없거나 무효/만료(`IGW00121`/`00123`)면 자동 발급·재발급(stdin 프롬프트 없음 → 헤드리스 안전). `False`면 `get_token()`/`force_refresh()`/`revoke()` 로 직접 관리(↓토큰 정책) |
 | **유연한 응답** | `APIResponse` dict 래퍼 기본, `resp.to_dataframe(key="Out1")` 로 DataFrame 변환 선택 |
 | **WebSocket 자동화** | 연결·재연결(exponential backoff)·구독 복원·종료 라이프사이클 내장 |
-| **개별 실행 가능 예제** | `examples/<group>/<method>.py` — 복사 → 값만 바꿔 실행 |
-| **LLM · AI 에이전트 친화** | [`llms.txt`](llms.txt)(저장소 구조·명세·예제 안내) + 코드 어시스턴트 MCP 서버 — LLM·AI 에이전트가 API를 쉽게 탐색 |
-| **웹 API 테스터** | [`web_test/`](web_test/) — 브라우저에서 전체 API를 버튼 한 번으로 실행. In/Out 필드 명세 패널·Example/SDK 전환·cURL 미리보기 제공 (`python web_test/server.py`) |
+| **개별 실행 가능 예제** | `examples/<group>/<method>.py` - 복사 → 값만 바꿔 실행 |
+| **LLM · AI 에이전트 친화** | [`llms.txt`](llms.txt)(저장소 구조·명세·예제 안내) + 코드 어시스턴트 MCP 서버 - LLM·AI 에이전트가 API를 쉽게 탐색 |
+| **웹 API 테스터** | [`web_test/`](web_test/) - 브라우저에서 전체 API를 버튼 한 번으로 실행. In/Out 필드 명세 패널·Example/SDK 전환·cURL 미리보기 제공 (`python web_test/server.py`) |
 
 ---
 
 ## 사전 준비
 
-1. **DB증권 계좌 개설** — [비대면 계좌개설](https://www.dbsec.co.kr/custcenter/account/cu_NonfaceBranch_viw.do)
-2. **Open API 사용 신청** — DB증권 홈페이지 -> OpenAPI 서비스 신청 메뉴(https://www.dbsec.co.kr/online/accservice/on_OpenApi_wrk00.do) 에서 신청
-3. **APP_KEY / APP_SECRET 발급** — 신청 완료 후 발급
-4. 모의투자 OpenAPI 앱 신청 전 **모의투자 신청** 필수 — DB증권 홈페이지 -> 모의투자 -> 상시모의투자 신청 메뉴(https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do) 에서 신청 
+1. **DB증권 계좌 개설** - [비대면 계좌개설](https://www.dbsec.co.kr/custcenter/account/cu_NonfaceBranch_viw.do)
+2. **Open API 사용 신청** - DB증권 홈페이지 -> OpenAPI 서비스 신청 메뉴(https://www.dbsec.co.kr/online/accservice/on_OpenApi_wrk00.do) 에서 신청
+3. **APP_KEY / APP_SECRET 발급** - 신청 완료 후 발급
+4. 모의투자 OpenAPI 앱 신청 전 **모의투자 신청** 필수 - DB증권 홈페이지 -> 모의투자 -> 상시모의투자 신청 메뉴(https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do) 에서 신청 
 5. **Python 3.10 이상** 설치
 
 ---
@@ -113,7 +113,7 @@
 ```bash
 git clone https://github.com/DBsecurities/dbsec-open-api.git
 cd dbsec-open-api
-pip install -e .                            # dbsec_sdk + 의존성(requests·pyyaml·websockets·pandas) 일괄 설치 — standalone 예제도 이걸로 동작
+pip install -e .                            # dbsec_sdk + 의존성(requests·pyyaml·websockets·pandas) 일괄 설치 - standalone 예제도 이걸로 동작
 cp config.yaml.example config.yaml          # APP_KEY/SECRET 입력 + mode: demo  (macOS/Linux/Git Bash)
 # Windows CMD:        copy config.yaml.example config.yaml
 # Windows PowerShell: Copy-Item config.yaml.example config.yaml
@@ -128,7 +128,7 @@ import asyncio
 from dbsec_sdk import DBSecClient
 
 async def main():
-    # 클라이언트 생성 — 유량제어·토큰 옵션 (모두 기본값이라 생략 가능: DBSecClient("config.yaml") 만으로도 동작)
+    # 클라이언트 생성 - 유량제어·토큰 옵션 (모두 기본값이라 생략 가능: DBSecClient("config.yaml") 만으로도 동작)
     async with DBSecClient(
         "config.yaml",
         rate_limit=True,          # 유량제어: 호출 전 앱TPS+API별 TPS 간격을 맞춰 IGW00201(호출초과) 예방. False면 미적용.
@@ -137,7 +137,7 @@ async def main():
                                   # False면 자동 발급 안 함 → 토큰 없으면 AuthError, 만료/무효는 APIError (직접 관리).
         rate_limit_backoff=True,  # 지수백오프: IGW00201 받으면 1·2·4·8초 후 재시도. False면 즉시 APIError.
     ) as client:
-        # 국내주식 현재가조회 — 삼성전자 (읽기 전용)
+        # 국내주식 현재가조회 - 삼성전자 (읽기 전용)
         resp = await client.apis.kr_stock_quote.kr_stock_inquire_price(
             InputCondMrktDivCode="J",   # J: KRX 주식
             InputIscd1="005930")        # 삼성전자
@@ -159,7 +159,7 @@ asyncio.run(main())
 ## examples 폴더 사용법
 
 `examples/` 는 **SDK 없이 단독 실행되는 스크립트 모음**입니다. API 1개당 파일 1개(`<method>.py`)이며,
-`examples/dbsec_helper.py`(표준 라이브러리 + `requests`·`pyyaml`)만으로 동작합니다 — `dbsec_sdk` 와는 **독립적**입니다.
+`examples/dbsec_helper.py`(표준 라이브러리 + `requests`·`pyyaml`)만으로 동작합니다 - `dbsec_sdk` 와는 **독립적**입니다.
 "복사 → 값만 바꿔 실행"으로 API를 빠르게 익히기에 적합합니다.
 
 ### 실행
@@ -176,7 +176,7 @@ cd examples && python kr_stock_quote/kr_stock_inquire_price.py
 ```
 
 - 토큰은 루트 `.dbsec_token.json` 캐시를 우선 사용하며(SDK 와 공유), 유효한 캐시가 없으면 첫 실행 시
-  발급 여부를 묻습니다 — `[1]` 지금 발급하고 계속 / `[2]` 취소(기본). 비대화형(파이프/CI) 환경이면
+  발급 여부를 묻습니다 - `[1]` 지금 발급하고 계속 / `[2]` 취소(기본). 비대화형(파이프/CI) 환경이면
   발급 프롬프트 없이 안전하게 취소됩니다.
 - 각 그룹 폴더의 `README.md` 에 그 그룹의 메서드 목록·호출 패턴이 정리되어 있습니다.
 
@@ -211,9 +211,9 @@ run_ws(ws_subscribe(
 ```
 
 > `tr_type` 은 호출자가 직접 지정합니다(자동판별 안 함). 일반 시세 TR 은 `tr_type="1"`,
-> 계좌 단위 TR(`IS0/IS1/IS2/IF0/O/P` — 주문접수/체결/잔고)은 `tr_type="3"` 으로 호출하세요.
+> 계좌 단위 TR(`IS0/IS1/IS2/IF0/O/P` - 주문접수/체결/잔고)은 `tr_type="3"` 으로 호출하세요.
 
-> **examples vs SDK** — `examples/` 는 `call_rest("/api/...", body={...})`(dict 자유 입력·동기)로 빠른 학습·단발 테스트용,
+> **examples vs SDK** - `examples/` 는 `call_rest("/api/...", body={...})`(dict 자유 입력·동기)로 빠른 학습·단발 테스트용,
 > `dbsec_sdk/` 는 `await client.apis.그룹.메서드(필드=값)`(타입 시그니처·비동기·유량제어·토큰 자동발급(auto_token))로 앱/봇 임베드용입니다.
 > 자세한 SDK 사용법은 [docs/sdk_usage.md](docs/sdk_usage.md) 참조.
 
@@ -243,7 +243,7 @@ python /절대경로/dbsec-open-api/mcp_server/run_server.py   # cwd 무관 (Cla
 ```
 
 - 서버는 기동 시 저장소를 **`git fetch` + `git reset --hard`** 로 원격과 일치시킵니다
-  — **commit/push 는 하지 않습니다.** (`config.yaml`·`.dbsec_token.json` 등 untracked 파일은 보존)
+  - **commit/push 는 하지 않습니다.** (`config.yaml`·`.dbsec_token.json` 등 untracked 파일은 보존)
 - Claude Desktop 등 `cwd` 를 보장하지 않는 환경에서는 `args` 에 **`run_server.py` 절대경로**를
   지정하세요(`cwd` 불필요).
 - 환경변수 `DBSEC_MCP_GIT_REPO`(clone 대상 URL) · `DBSEC_MCP_GIT_BRANCH` · `DBSEC_MCP_GIT_DIR` ·
@@ -266,7 +266,7 @@ python /절대경로/dbsec-open-api/mcp_server/run_server.py   # cwd 무관 (Cla
 |---|---|
 | 전체 API 목록 | 그룹별 정렬·검색·종류(전체/주문/시세·조회/실시간) 필터 |
 | In/Out 명세 패널 | 선택한 API 의 요청(In)·응답(Out) 필드(이름·타입·설명) 표시 |
-| Example / SDK 전환 | 같은 API 를 `call_rest`(예제) 또는 `client.apis.*`(SDK) 로 실행 — 코드 스니펫도 함께 |
+| Example / SDK 전환 | 같은 API 를 `call_rest`(예제) 또는 `client.apis.*`(SDK) 로 실행 - 코드 스니펫도 함께 |
 | 원클릭 실행(Try It!) | 요청 전송 → 응답(JSON)·상태·수행시간 즉시 표시, body 편집 가능 |
 | WebSocket 실시간 | 연결→구독→실시간 수신을 한 화면에서 갱신(SSE) |
 | 주문 안전장치 | 주문(실거래) API 는 기본 **비활성**, 체크박스로 명시 동의해야 실행 |
@@ -329,7 +329,7 @@ dbsec-open-api/
 │   ├── response.py                         #   APIResponse + to_dataframe()
 │   │
 │   ├── apis/                               #   ★ 그룹별 API 메서드
-│   │   ├── registry.py                     #     APIRegistry — client.apis 진입점
+│   │   ├── registry.py                     #     APIRegistry - client.apis 진입점
 │   │   ├── auth/                           #     OAuth 인증
 │   │   ├── common/                         #     관심종목
 │   │   ├── kr_stock_order/                 #     국내주식주문
@@ -360,7 +360,7 @@ dbsec-open-api/
 │   ├── dbsec_helper.py                     #   공통 헬퍼 (config 로드·토큰·REST/WS 호출)
 │   └── <group_slug>/
 │       ├── README.md                       #   그룹 내 메서드 목록 + 호출 패턴
-│       └── <method>.py                     #   API당 1파일 — 독립 실행 (docstring 에 In/Out 명세)
+│       └── <method>.py                     #   API당 1파일 - 독립 실행 (docstring 에 In/Out 명세)
 │
 ├── mcp_server/                             # 코드 어시스턴트 MCP 서버 (stdio)
 │   ├── run_server.py                       #   진입점(cwd 무관): sync→인덱싱→서버 기동
@@ -369,7 +369,7 @@ dbsec-open-api/
 │   └── server.py                           #   FastMCP tools (list/search/spec/sample/guide)
 │
 ├── web_test/                               # 웹 API 테스터 (python web_test/server.py → http://127.0.0.1:8765)
-│   ├── server.py                           #   로컬 프록시 — 토큰 발급·REST 대리 호출·WS 실시간 스트림(SSE)
+│   ├── server.py                           #   로컬 프록시 - 토큰 발급·REST 대리 호출·WS 실시간 스트림(SSE)
 │   ├── catalog.py                          #   examples 스캔 → API 목록·In/Out 명세 구성
 │   └── index.html                          #   UI (목록·Try It!·In/Out 명세 패널, 라이트/다크)
 │
@@ -432,10 +432,10 @@ auth:
 
 environment:
   base_url: "https://openapi.dbsec.co.kr:8443"
-  # WebSocket — 일반 (대부분 그룹)
+  # WebSocket - 일반 (대부분 그룹)
   ws_production: "wss://openapi.dbsec.co.kr:7070/websocket"
   ws_demo:       "wss://openapi.dbsec.co.kr:17070/websocket"
-  # WebSocket — 해외선물옵션(ov_futopt) 전용 포트 — 운영 전용 (모의투자 미지원)
+  # WebSocket - 해외선물옵션(ov_futopt) 전용 포트 - 운영 전용 (모의투자 미지원)
   ws_production_ov_futopt: "wss://openapi.dbsec.co.kr:7071/websocket"
   mode: "demo"   # "production" → prd_* / "demo" → vtl_*
 ```
@@ -448,7 +448,7 @@ environment:
 
 ### 1. 인증 (토큰 자동)
 
-`DBSecClient` 는 **비동기** 클라이언트입니다 — 모든 호출에 `await`, 진입은 `asyncio.run()`.
+`DBSecClient` 는 **비동기** 클라이언트입니다 - 모든 호출에 `await`, 진입은 `asyncio.run()`.
 
 ```python
 import asyncio
@@ -474,7 +474,7 @@ await client.force_refresh()                      # 강제 갱신 (폐기 후 �
 await client.revoke()                             # 폐기 (서버 무효화 + 로컬 캐시 삭제)
 ```
 
-### 2. 통합 API 호출 패턴 — `client.apis`
+### 2. 통합 API 호출 패턴 - `client.apis`
 
 모든 API는 `await client.apis.<그룹>.<메서드>(...)` 형태로 호출합니다.
 (아래 스니펫들은 위 `main()` 같은 **async 함수 안**에서 실행한다고 가정합니다.)
@@ -493,7 +493,7 @@ resp = await client.apis.<group_slug>.<method_name>(
 - `<method_name>` : 도메인 접두어 + 동작/대상. 예) `kr_stock_order`, `ov_stock_inquire_balance_margin`
 - 반환값 : `APIResponse` (`.body`, `.rsp_cd`, `.message`, `.to_dataframe()`, `.has_more`, `.cont_key`)
 
-#### 연속조회(자동 페이징) — `fetch_all=True`
+#### 연속조회(자동 페이징) - `fetch_all=True`
 
 응답이 여러 페이지로 나뉘는 조회(순위·종목조회·시간대별 체결·틱차트 등)는
 **단건과 똑같이 호출하되 `fetch_all=True`** 만 더하면 **서버가 끝(`cont_yn='N'`)을 알릴 때까지
@@ -524,7 +524,7 @@ pages = await client.post_paged("/api/v1/quote/kr-chart/tick", {"In": {...}})
 - 각 페이지 호출은 **유량제어가 자동 페이싱**합니다(별도 sleep 불필요).
 - 구버전 `client.fetch_all(메서드, …)` 도 하위호환으로 동작하지만, 위 `fetch_all=True` 형태를 권장합니다.
 
-### 3. 국내주식 — 주문/조회
+### 3. 국내주식 - 주문/조회
 
 #### 3-1. 종합주문 (CSPAT00600)
 
@@ -596,7 +596,7 @@ orderbook   = await client.apis.kr_stock_quote.kr_stock_inquire_orderbook(
 ranks       = await client.apis.kr_stock_quote.kr_stock_inquire_condition_rise_fall(...)
 ```
 
-### 4. 그 외 상품 — 해외주식 · 선물옵션 · 채권 · 차트 · WebSocket
+### 4. 그 외 상품 - 해외주식 · 선물옵션 · 채권 · 차트 · WebSocket
 
 위 국내주식과 동일한 `client.apis.<그룹>.<메서드>(...)` 패턴입니다. 각 그룹의 전체 메서드·필수 필드·실행 예제는 그룹별 README에서 확인하세요.
 
@@ -684,12 +684,12 @@ MCP 툴로 노출하거나 LLM 에이전트에서 사용할 때 **메서드 이�
 |------|------|----------|
 | **REST API URL** | `https://openapi.dbsec.co.kr:8443` | **동일** (앱 속성으로 내부 분기) |
 | **WebSocket URL (일반)** | `wss://openapi.dbsec.co.kr:7070/websocket` | `wss://openapi.dbsec.co.kr:17070/websocket` |
-| **WebSocket URL (해외선옵)** | `wss://openapi.dbsec.co.kr:7071/websocket` | — (미지원) |
+| **WebSocket URL (해외선옵)** | `wss://openapi.dbsec.co.kr:7071/websocket` | - (미지원) |
 | **APP_KEY / APP_SECRET** | 운영용 발급 | 모의투자용 발급 |
 
 > REST API는 운영/모의투자 URL이 동일합니다. 발급받은 앱 키의 속성으로 서버가 분기합니다. **WebSocket 포트만 다릅니다** (운영: 7070, 모의: 17070).
 >
-> ⚠️ **해외선물옵션(`ov_futopt_*`)은 모의투자가 시스템 차원에서 없습니다** — 운영(7071) 전용. demo 모드로 호출 시 라이브러리가 즉시 차단합니다.
+> ⚠️ **해외선물옵션(`ov_futopt_*`)은 모의투자가 시스템 차원에서 없습니다** - 운영(7071) 전용. demo 모드로 호출 시 라이브러리가 즉시 차단합니다.
 
 `config.yaml`에서 `mode`를 변경하면 WebSocket URL이 자동 전환됩니다:
 
@@ -699,7 +699,7 @@ environment:
   # mode: "production"  # 운영 (7070)
 ```
 
-> ⚠️ **모든 API가 모의투자에서 동작하지는 않습니다.** [부록 — API 모의투자 지원 현황](#부록--api-모의투자-지원-현황) 참조.
+> ⚠️ **모든 API가 모의투자에서 동작하지는 않습니다.** [부록 - API 모의투자 지원 현황](#부록--api-모의투자-지원-현황) 참조.
 
 ---
 
@@ -711,8 +711,8 @@ environment:
 
 | 코드 | 설명 |
 |------|------|
-| IGW00121 / IGW00123 | 토큰 무효/만료 — `auto_token=True`면 자동 재발급, `False`면 APIError 로 표면화 |
-| IGW00201 | 호출 거래건수 초과 — 호출 빈도 조절 |
+| IGW00121 / IGW00123 | 토큰 무효/만료 - `auto_token=True`면 자동 재발급, `False`면 APIError 로 표면화 |
+| IGW00201 | 호출 거래건수 초과 - 호출 빈도 조절 |
 | 2611 | 장시작 전 또는 장마감 |
 | 2714 / 2752 | 매매가능수량·증거금 부족 |
 
@@ -735,12 +735,12 @@ print(lookup_error("IGW00123"))   # "기간이 만료된 token입니다."
 
 ---
 
-## 부록 — API 모의투자 지원 현황
+## 부록 - API 모의투자 지원 현황
 
 DB증권 Open API 가이드 페이지 Description 영역에 **`※ 모의투자 계좌로 사용가능한 API입니다.`** 문구가 있으면 모의투자에서도 사용 가능합니다. 그 외는 실전투자 환경에서만 호출됩니다.
 
-- **⭕ 모의투자 + 실전투자 모두 지원** — 시세 · 실시간 · 차트 그룹은 전부 사용 가능
-- **❌ 실전투자 전용** — 대부분의 주문 및 일부 조회 API (특히 해외선물옵션은 시스템 차원 모의투자 미지원)
+- **⭕ 모의투자 + 실전투자 모두 지원** - 시세 · 실시간 · 차트 그룹은 전부 사용 가능
+- **❌ 실전투자 전용** - 대부분의 주문 및 일부 조회 API (특히 해외선물옵션은 시스템 차원 모의투자 미지원)
 
 **각 API별 ⭕/❌ 표시가 담긴 전체 매트릭스는** → **[docs/api_support_matrix.md](docs/api_support_matrix.md)**
 

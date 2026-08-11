@@ -4,15 +4,15 @@ LLM(Claude Desktop · Claude Code · Cursor 등)이 DB증권 Open API 의 **그�
 **요청(In)·응답(Out) 파라미터 명세**, **실행 가능한 파이썬 샘플코드**를 직접 조회할 수 있게 해주는
 MCP(Model Context Protocol, stdio) 서버입니다.
 
-명세의 **원본은 `examples/`(샘플코드)** 입니다 — 요청(In)은 코드 내 인라인 주석에서,
+명세의 **원본은 `examples/`(샘플코드)** 입니다 - 요청(In)은 코드 내 인라인 주석에서,
 응답(Out)은 docstring 의 `응답 파라미터 (Out)` 섹션에서 파싱하며, 모의투자·TPS·TR코드는
 `docs/api_support_matrix.md` 로 보강합니다. 예제를 수정하면 MCP 가 그대로 반영합니다
 (별도 명세 캐시에 의존하지 않음). 서버를 실행하면 **GitHub 저장소를 원격 기준으로 강제
 동기화(reset)** 한 뒤 기동합니다.
 
-> **동기화 전략 — `git fetch` 후 `git reset --hard`**
+> **동기화 전략 - `git fetch` 후 `git reset --hard`**
 > 로컬을 원격과 **정확히 일치**시킵니다(로컬 커밋·수정이 있어도 원격 상태로 덮어씀).
-> `add` · `commit` · `push` 는 **절대 하지 않습니다** — 사용자는 받아오기만 합니다.
+> `add` · `commit` · `push` 는 **절대 하지 않습니다** - 사용자는 받아오기만 합니다.
 > `reset --hard` 는 **추적 파일만** 원복하며 `git clean` 을 돌리지 않으므로,
 > `config.yaml`·`.dbsec_token.json` 같은 **추적되지 않는 파일은 그대로 보존**됩니다.
 
@@ -28,7 +28,7 @@ MCP(Model Context Protocol, stdio) 서버입니다.
 | `get_sample_code(identifier)` | 해당 API 의 실행 가능한 파이썬 샘플코드 원문 |
 | `get_setup_guide()` | 설치·`config.yaml`·토큰 발급·실행법 시작 가이드 |
 
-리소스: `dbsec://catalog` — 전체 API 인덱스(JSON).
+리소스: `dbsec://catalog` - 전체 API 인덱스(JSON).
 
 `identifier` 는 **메서드 slug**(예: `kr_stock_inquire_price`) 또는 **TR코드**(예: `PRICE`).
 TR코드가 여러 그룹에 중복되면(예: `HOGA`) 후보 목록을 돌려주므로 slug 로 다시 지정하면 됩니다.

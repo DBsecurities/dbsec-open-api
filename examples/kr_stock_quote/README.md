@@ -1,4 +1,4 @@
-# 국내주식시세 — 예제
+# 국내주식시세 - 예제
 
 group_slug: `kr_stock_quote`
 

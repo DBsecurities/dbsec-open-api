@@ -1,4 +1,4 @@
-# 해외주식주문 — 예제
+# 해외주식주문 - 예제
 
 group_slug: `ov_stock_order`
 

@@ -1,4 +1,4 @@
-# 국내선물옵션시세 — 예제
+# 국내선물옵션시세 - 예제
 
 group_slug: `kr_futopt_quote`
 

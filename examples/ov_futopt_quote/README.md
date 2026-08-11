@@ -1,8 +1,8 @@
-# 해외선물옵션시세 — 예제
+# 해외선물옵션시세 - 예제
 
 group_slug: `ov_futopt_quote`
 
-> ⚠️ **운영(production) 전용 그룹** — DB증권 해외선물옵션은 시스템 차원에서 모의투자를 지원하지 않습니다.
+> ⚠️ **운영(production) 전용 그룹** - DB증권 해외선물옵션은 시스템 차원에서 모의투자를 지원하지 않습니다.
 > `config.yaml` 의 `environment.mode` 를 `"production"` 으로 두고 `prd_app_key`/`prd_app_secret` 를 사용해야 합니다.
 > demo 모드에서 호출하면 `dbsec_helper` 가 명확한 에러로 차단합니다.
 

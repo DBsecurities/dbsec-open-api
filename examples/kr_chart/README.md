@@ -1,4 +1,4 @@
-# 국내주식/선물차트 — 예제
+# 국내주식/선물차트 - 예제
 
 group_slug: `kr_chart`
 
@@ -43,7 +43,7 @@ python examples/kr_chart/<method>.py
 
 차트 API 들이 공유하는 입력 필드 중 자주 헷갈리거나 빈 문자열의 의미가 비직관적인 항목입니다. 전체 필드 명세는 각 API 의 [DB증권 OpenAPI 가이드](https://openapi.dbsec.co.kr/apiservice) 페이지를 확인하세요.
 
-### `dataCnt` — 호출 건수 (틱차트·분차트)
+### `dataCnt` - 호출 건수 (틱차트·분차트)
 
 | 항목 | 내용 |
 |---|---|

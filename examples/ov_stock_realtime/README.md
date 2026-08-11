@@ -1,4 +1,4 @@
-# 해외주식시세(실시간) — 예제
+# 해외주식시세(실시간) - 예제
 
 group_slug: `ov_stock_realtime`
 

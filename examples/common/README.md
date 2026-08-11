@@ -1,4 +1,4 @@
-# 공통 — 예제
+# 공통 - 예제
 
 group_slug: `common`
 

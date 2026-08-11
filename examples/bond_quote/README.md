@@ -1,4 +1,4 @@
-# 장내채권시세 — 예제
+# 장내채권시세 - 예제
 
 group_slug: `bond_quote`
 
