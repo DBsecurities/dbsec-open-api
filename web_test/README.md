@@ -1,7 +1,9 @@
 # DB증권 OpenAPI · 웹 테스터 (Try It)
 
 DB증권 OpenAPI 전체 API를 **웹에서 버튼 한 번으로 실행**해 보는 로컬 페이지입니다.
-(CREDENTIALS · URL · cURL · RESPONSE 구성)
+(좌: API 목록 · 중앙: CREDENTIALS·URL·cURL·RESPONSE · 우: In/Out 필드 명세)
+
+![웹 테스터 메인 화면](webtester.png)
 
 ## 실행
 
