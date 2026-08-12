@@ -203,6 +203,7 @@
   .titlebar .nm{font-size:16px;font-weight:700;color:var(--title)}
   .titlebar .lb{color:var(--text);font-size:13px}
   .titlebar .trc{font-size:12px;color:var(--text);background:var(--panel2);border-radius:5px;padding:1px 7px}
+  .titlebar .trc.nodemo{background:var(--bad-bg);color:var(--bad-tx)}
   .modebar{display:flex;align-items:center;gap:12px;margin:0 0 16px;flex-wrap:wrap}
   .modebar .mlabel{font-size:12px;color:var(--head);text-transform:uppercase;letter-spacing:.5px}
   .seg{display:inline-flex;background:var(--panel2);border-radius:8px;overflow:hidden}
@@ -211,8 +212,8 @@
   .seg.theme button{padding:4px 9px;font-size:13px;font-weight:600;line-height:1}
   #themeseg button{display:flex;align-items:center;justify-content:center;padding:5px 9px}
   #themeseg button svg{display:block}
-  .modebar .mhint{font-size:11.5px;color:var(--muted)}
   .modebar .seg button{width:96px;padding:6px 0;text-align:center}   /* Example/SDK 동일 폭 */
+  .seg.keys button{width:96px;padding:6px 0;text-align:center}       /* OAuth 대상 키 동일 폭 */
   .kv{color:var(--muted);font-size:12px;margin-top:8px}
   a.gd{color:var(--blue);font-size:11px;text-decoration:none}
 </style>
@@ -266,16 +267,19 @@
 <script>
 let CAT=[], CUR=null, KINDF="all", BASEURL="", HAS={};
 let COLLAPSED=new Set(); try{COLLAPSED=new Set(JSON.parse(localStorage.getItem('dbsec_collapsed')||'[]'));}catch(_){}   // 접힌 그룹
-let TOKENS={prd:"", ov_futopt:""};   // 페이지에 입력한 access token (localStorage 보존)
+let TOKENS={prd:"", demo:"", ov_futopt:""};   // 페이지에 입력한 access token (localStorage 보존)
+const KNAME={prd:'일반', demo:'모의투자', ov_futopt:'해외선옵'};
 // 서버가 직접 서빙하면 상대경로, 미리보기/다른 출처면 로컬 서버를 절대경로로 호출.
 const API = (location.hostname==="127.0.0.1"||location.hostname==="localhost") && location.port==="8765"
             ? "" : "http://127.0.0.1:8765";
 const $=s=>document.querySelector(s);
-function loadTokens(){ try{const t=JSON.parse(localStorage.getItem("dbsec_tokens")||"{}");TOKENS.prd=t.prd||"";TOKENS.ov_futopt=t.ov_futopt||"";}catch(_){} }
+function loadTokens(){ try{const t=JSON.parse(localStorage.getItem("dbsec_tokens")||"{}");TOKENS.prd=t.prd||"";TOKENS.demo=t.demo||"";TOKENS.ov_futopt=t.ov_futopt||"";}catch(_){} }
 function saveTokens(){ localStorage.setItem("dbsec_tokens", JSON.stringify(TOKENS)); }
 let OAUTHKEY="prd";   // OAuth(토큰 발급/폐기) 대상 키
 function setOauthKey(k){ OAUTHKEY=k; if(CUR&&CUR.oauth) main(); }
-function curTokenKind(){ if(CUR&&CUR.oauth) return OAUTHKEY; return CUR && CUR.is_ov_futopt ? "ov_futopt" : "prd"; }
+let ENVSEL = localStorage.getItem("dbsec_env")||"prd";   // 실행 환경: 'prd'(실전) | 'demo'(모의투자)
+function setEnv(k){ ENVSEL=k; localStorage.setItem("dbsec_env",k); if(CUR) main(); }
+function curTokenKind(){ if(CUR&&CUR.oauth) return OAUTHKEY; if(CUR&&CUR.is_ov_futopt) return "ov_futopt"; return ENVSEL; }
 let MODE = localStorage.getItem("dbsec_mode")||"example";   // 'example' | 'sdk'
 function setMode(m){ MODE=m; localStorage.setItem("dbsec_mode",m); if(CUR) main(); }
 function flatten(body){ if(!body||typeof body!=='object')return {}; const b=Object.values(body).filter(v=>v&&typeof v==='object'&&!Array.isArray(v)); if(b.length){const o={};b.forEach(x=>Object.assign(o,x));return o;} return {...body}; }
@@ -290,14 +294,16 @@ function pySnippet(e, body){
   if(e.kind==='ws'){
     if(MODE==='sdk'){
       const u=e.is_ov_futopt?`ws_url=client.config.ws_url_for("${e.group_slug}")`:"";
-      return `ws = client.create_websocket(${u})\nws.on_message(lambda cd, k, d: print(cd, k, d))\nawait ws.connect()\nawait ws.add_realtime("${e.tr_cd}", "${curTrKey()}", tr_type="${e.tr_type}")\nawait ws.run()`;
+      const demoNote=(!e.is_ov_futopt&&curTokenKind()==='demo')?`# 모의투자: config.yaml environment.mode = "demo" (WS 17070 포트 자동 선택)\n`:"";
+      return `${demoNote}ws = client.create_websocket(${u})\nws.on_message(lambda cd, k, d: print(cd, k, d))\nawait ws.connect()\nawait ws.add_realtime("${e.tr_cd}", "${curTrKey()}", tr_type="${e.tr_type}")\nawait ws.run()`;
     }
     return `from dbsec_helper import ws_subscribe, run_ws\nrun_ws(ws_subscribe(\n    tr_cd="${e.tr_cd}",\n    tr_key="${curTrKey()}",\n    group_slug="${e.group_slug}",\n    tr_type="${e.tr_type}",\n))`;
   }
   const kw=flatten(body), lines=Object.entries(kw).map(([k,v])=>`    ${k}=${pyval(v)}`);
   if(e.paged) lines.push("    fetch_all=True, max_pages=3");
   const inner=lines.length?"\n"+lines.join(",\n")+"\n":"";
-  return `resp = await client.apis.${e.group}.${e.method}(${inner})\nprint(resp.status_code, resp.rsp_cd)\nprint(resp.body)`;
+  const demoNote=(!e.is_ov_futopt&&curTokenKind()==='demo')?`# 모의투자: config.yaml environment.mode = "demo" (vtl 앱키로 토큰 발급)\n`:"";
+  return `${demoNote}resp = await client.apis.${e.group}.${e.method}(${inner})\nprint(resp.status_code, resp.rsp_cd)\nprint(resp.body)`;
 }
 function renderCode2(e, body){
   const isWs=e.kind==='ws';
@@ -443,10 +449,11 @@ function credsHtml(){
         oninput="TOKENS['${k}']=this.value;saveTokens();const d=document.getElementById('dot_${k}');if(d)d.className='dot '+(this.value?'on':'')">
    </div>`;
   return `<div class="card">
-     ${row('prd','ACCESS TOKEN - 일반 (국내·해외주식·채권·국내선옵)')}
+     ${row('prd','ACCESS TOKEN - 일반 (국내·해외주식·채권·국내선옵 실전)')}
+     ${row('demo','ACCESS TOKEN - 모의투자 (vtl 키 · 선택)')}
      ${row('ov_futopt','ACCESS TOKEN - 해외선옵 (ov_futopt · 선택)')}
    </div>
-   <div class="kv">base_url = ${esc(BASEURL)} · 현재 API 인증 토큰: <b style="color:var(--accent)">${useK==='ov_futopt'?'해외선옵':'일반'}</b> · 발급/폐기는 API 목록 최상단 <b style="color:var(--text)">인증 › 접근토큰 발급 / 접근토큰 폐기</b> 에서 (localStorage 저장)</div>`;
+   <div class="kv">base_url = ${esc(BASEURL)} · 현재 API 인증 토큰: <b style="color:var(--accent)">${KNAME[useK]||useK}</b> · 발급/폐기는 API 목록 최상단 <b style="color:var(--text)">인증 › 접근토큰 발급 / 접근토큰 폐기</b> 에서 (localStorage 저장)</div>`;
 }
 
 function curlHtml(e, body){
@@ -460,7 +467,7 @@ function curlHtml(e, body){
       `     <span class="c-flag">--data</span> <span class="c-str">'${data}'</span>`;
   }
   if(e.kind==='ws'){
-    return `<span class="c-cmd">WebSocket</span> ${e.is_ov_futopt?'wss://…:7071':'wss://…:7070'}/websocket\n`+
+    return `<span class="c-cmd">WebSocket</span> ${e.is_ov_futopt?'wss://…:7071':(curTokenKind()==='demo'?'wss://…:17070':'wss://…:7070')}/websocket\n`+
       `  header: { token, tr_type:<span class="c-str">"${esc(e.tr_type)}"</span> }\n`+
       `  body:   { tr_cd:<span class="c-str">"${esc(e.tr_cd)}"</span>, tr_key:<span class="c-str">"${esc(e.tr_key||'')}"</span> }`;
   }
@@ -468,7 +475,7 @@ function curlHtml(e, body){
   return `<span class="c-cmd">curl</span> <span class="c-flag">--request</span> POST \\\n`+
     `     <span class="c-flag">--url</span> <span class="c-url">'${esc(BASEURL)}${esc(e.url)}'</span> \\\n`+
     `     <span class="c-flag">--header</span> <span class="c-str">'content-type: application/json'</span> \\\n`+
-    `     <span class="c-flag">--header</span> <span class="c-str">'authorization: Bearer &lt;${e.is_ov_futopt?'OV_FUTOPT':'PRD'}_TOKEN&gt;'</span> \\\n`+
+    `     <span class="c-flag">--header</span> <span class="c-str">'authorization: Bearer &lt;${curTokenKind().toUpperCase()}_TOKEN&gt;'</span> \\\n`+
     `     <span class="c-flag">--data</span> <span class="c-str">'${esc(b)}'</span>`;
 }
 
@@ -479,7 +486,7 @@ function main(){
   const bodyStr = e.body? JSON.stringify(e.body,null,2):"";
   $("#main").innerHTML=`
    <div class="titlebar"><span class="badge b-${isOauth?'oauth':e.kind}">${esc(KIND_LABEL[isOauth?'oauth':e.kind]||e.kind)}</span>
-     <span class="nm">${esc(e.method)}</span><span class="lb">${esc(e.label||"")}</span>${(e.tr_code||e.tr_cd)?`<span class="trc">${esc(e.tr_code||e.tr_cd)}</span>`:''}</div>
+     <span class="nm">${esc(e.method)}</span><span class="lb">${esc(e.label||"")}</span>${(e.tr_code||e.tr_cd)?`<span class="trc">${esc(e.tr_code||e.tr_cd)}</span>`:''}${(!isOauth&&e.demo===false)?`<span class="trc nodemo">모의투자 미지원</span>`:''}</div>
 
    <div class="modebar">
      <span class="mlabel">실행 방식</span>
@@ -487,14 +494,18 @@ function main(){
        <button class="${MODE==='example'?'on':''}" onclick="setMode('example')">Example</button>
        <button class="${MODE==='sdk'?'on':''}" onclick="setMode('sdk')">SDK</button>
      </div>
-     <span class="mhint">${MODE==='sdk'?(isWs?'client.create_websocket() + add_realtime()':'await client.apis.'+esc(e.group)+'.'+esc(e.method)+'(...)'):(isWs?'dbsec_helper.ws_subscribe() (예제)':'call_rest 와 동일한 raw 요청 (예제)')}</span>
+     ${(!isOauth&&!e.is_ov_futopt)?`<span class="mlabel">실행 환경</span>
+     <div class="seg">
+       <button class="${ENVSEL==='prd'?'on':''}" onclick="setEnv('prd')">실전</button>
+       <button class="${ENVSEL==='demo'?'on':''}" onclick="setEnv('demo')">모의투자</button>
+     </div>`:''}
    </div>
 
    <div class="sec"><div class="h">Credentials</div><div id="creds">${credsHtml()}</div></div>
 
    ${isWs?`
    <div class="sec"><div class="h">WebSocket</div>
-     <div class="urlbar"><div class="m">${e.is_ov_futopt?'7071':'7070'} ▾</div>
+     <div class="urlbar"><div class="m">${e.is_ov_futopt?'7071':(curTokenKind()==='demo'?'17070':'7070')} ▾</div>
        <div class="u">tr_cd=${esc(e.tr_cd)} · tr_type=${esc(e.tr_type)} · ${esc(e.group_slug)}</div></div></div>
    <div class="sec"><div class="h">TR_KEY (편집 가능 · 종목코드 등)</div>
      <input class="wskey" id="wskey" spellcheck="false" autocomplete="off"
@@ -503,8 +514,9 @@ function main(){
    <div class="sec"><div class="h">URL</div>
      <div class="urlbar"><div class="m mpost">POST</div><div class="u">${esc(BASEURL)}${esc(e.url)}</div></div></div>
    <div class="sec"><div class="h">대상 키</div>
-     <div class="seg theme" style="margin-bottom:8px">
+     <div class="seg keys" style="margin-bottom:8px">
        <button class="${OAUTHKEY==='prd'?'on':''}" onclick="setOauthKey('prd')">일반</button>
+       <button class="${OAUTHKEY==='demo'?'on':''}" onclick="setOauthKey('demo')">모의투자</button>
        <button class="${OAUTHKEY==='ov_futopt'?'on':''}" onclick="setOauthKey('ov_futopt')">해외선옵</button>
      </div>
      <div class="kv">${e.oauth==='issue'?'config.yaml 의 선택한 키로 토큰을 발급해 위 ACCESS TOKEN 칸에 자동으로 채웁니다.':'선택한 키의 ACCESS TOKEN(위 입력칸)을 폐기하고 칸을 비웁니다.'}</div></div>
@@ -522,7 +534,9 @@ function main(){
      <pre class="code" id="curl"></pre></div>
 
    ${isOrder?`<div class="warn"><input type="checkbox" id="allowOrder">
-     <label for="allowOrder">실거래(주문) - 체크해야 실행됩니다. 실제 매매가 발생할 수 있습니다.</label></div>`:""}
+     <label for="allowOrder">${curTokenKind()==='demo'
+       ?'모의투자 주문 - 체크해야 실행됩니다. 모의 계좌에서 체결됩니다.'
+       :'실거래(주문) - 체크해야 실행됩니다. 실제 매매가 발생할 수 있습니다.'}</label></div>`:""}
 
    <div class="actions">
      <button class="tryit" id="try" onclick="tryIt()">Try It!</button>
@@ -626,13 +640,13 @@ async function tryIt(){
   if(e.oauth){ return oauthRun(e); }                       // OAuth 발급/폐기 (form-urlencoded)
   const token = TOKENS[curTokenKind()]||"";
   if(!token){ const inp=$("#tok_"+curTokenKind()); if(inp) inp.focus();
-    resp.innerHTML=`<span class="pill bad"><span class="d"></span>토큰 필요</span> ${curTokenKind()==='ov_futopt'?'해외선옵':'일반'} ACCESS TOKEN 을 입력하거나 [발급] 하세요.`; return; }
+    resp.innerHTML=`<span class="pill bad"><span class="d"></span>토큰 필요</span> ${KNAME[curTokenKind()]} ACCESS TOKEN 을 입력하거나 [발급] 하세요.`; return; }
   if(e.kind==='ws'){ startStream(e, token); return; }     // WebSocket → 실시간 스트림(SSE)
   const btn=$("#try"); btn.disabled=true; btn.textContent="실행중…";
   try{
     let body=null; try{ body=parseBody(); }catch(_){ btn.disabled=false; btn.textContent="Try It!"; return; }
     const allow_order = e.kind==='order' && $("#allowOrder") && $("#allowOrder").checked;
-    const j=await (await fetch(API+'/call',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:e.id,body,allow_order,token,mode:MODE})}).catch(x=>({json:()=>({error:String(x)})}))).json();
+    const j=await (await fetch(API+'/call',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:e.id,body,allow_order,token,mode:MODE,key_kind:curTokenKind()})}).catch(x=>({json:()=>({error:String(x)})}))).json();
     renderResp(j);
     recordHist(e,MODE,body,j);
   }catch(x){ resp.innerHTML=`<span class="pill bad"><span class="d"></span>오류</span> ${esc(String(x))}`; }
@@ -643,7 +657,7 @@ async function oauthRun(e){
   const btn=$("#try"), resp=$("#resp"), key=OAUTHKEY;
   const token = e.oauth==='revoke' ? (TOKENS[key]||"") : "";
   if(e.oauth==='revoke' && !token){ const inp=$("#tok_"+key); if(inp) inp.focus();
-    resp.innerHTML=`<span class="pill bad"><span class="d"></span>토큰 필요</span> 폐기할 ${key==='ov_futopt'?'해외선옵':'일반'} ACCESS TOKEN 을 입력하세요.`; return; }
+    resp.innerHTML=`<span class="pill bad"><span class="d"></span>토큰 필요</span> 폐기할 ${KNAME[key]||key} ACCESS TOKEN 을 입력하세요.`; return; }
   btn.disabled=true; btn.textContent="실행중…";
   try{
     const j=await (await fetch(API+'/call',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({id:e.id,key_kind:key,token})}).catch(x=>({json:()=>({error:String(x)})}))).json();
@@ -684,7 +698,7 @@ function startStream(e, token){
   let ended=false;
   function finalize(state){ if(ended)return; ended=true; try{es.close();}catch(_){}; if(_es===es)_es=null; setBtn(false); streamView(state,info); }
   setBtn(true); streamView('live',info);
-  const url=API+'/ws_stream?id='+encodeURIComponent(e.id)+'&token='+encodeURIComponent(token)+'&mode='+encodeURIComponent(MODE)+'&tr_key='+encodeURIComponent(curTrKey());
+  const url=API+'/ws_stream?id='+encodeURIComponent(e.id)+'&token='+encodeURIComponent(token)+'&mode='+encodeURIComponent(MODE)+'&tr_key='+encodeURIComponent(curTrKey())+'&key_kind='+encodeURIComponent(curTokenKind());
   const es=new EventSource(url); _es=es;
   es.addEventListener('opened',ev=>{ try{info.open=JSON.parse(ev.data);}catch(_){}; streamView('live',info); });
   es.addEventListener('msg',ev=>{ try{const d=JSON.parse(ev.data); info.count=d.n; info.last=d;}catch(_){}; streamView('live',info); });

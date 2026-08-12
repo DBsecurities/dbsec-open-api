@@ -3,8 +3,8 @@
 브라우저는 CORS 로 DB API 를 직접 못 부르므로, 이 서버가 토큰을 주입해 대신 호출한다.
 - GET  /            → index.html
 - GET  /catalog     → 전체 API 목록 + 자격증명(키 마스킹)·base_url
-- POST /token       → {kind:"prd"|"ov_futopt"} 토큰 발급(폼 인코딩)
-- POST /call        → {id, body?, allow_order?} REST 실행 → {status, json, curl, used_key}
+- POST /token       → {kind:"prd"|"demo"|"ov_futopt"} 토큰 발급(폼 인코딩)
+- POST /call        → {id, body?, allow_order?, key_kind?} REST 실행 → {status, json, curl, used_key}
 - POST /ws          → {id} WebSocket 프로브: 연결·구독·~3초 수신·정상 종료 → {messages, graceful}
 
 실행:  python web_test/server.py   (기본 http://127.0.0.1:8765)
@@ -55,8 +55,19 @@ AUTH, ENV = CFG.get("auth", {}), CFG.get("environment", {})
 BASE = ENV.get("base_url", "https://openapi.dbsec.co.kr:8443")
 KEYS = {
     "prd":       (str(AUTH.get("prd_app_key", "")).strip(),       str(AUTH.get("prd_app_secret", "")).strip()),
+    "demo":      (str(AUTH.get("vtl_app_key", "")).strip(),       str(AUTH.get("vtl_app_secret", "")).strip()),
     "ov_futopt": (str(AUTH.get("ov_futopt_prd_app_key", "")).strip(), str(AUTH.get("ov_futopt_prd_app_secret", "")).strip()),
 }
+KIND_NAME = {"prd": "일반", "demo": "모의투자", "ov_futopt": "해외선옵"}
+# 모의투자 WebSocket 전용 포트 (REST 는 운영/모의 URL 동일 - 토큰이 환경을 결정)
+WS_DEMO = ENV.get("ws_demo", "wss://openapi.dbsec.co.kr:17070/websocket")
+
+
+def req_kind(e: dict, payload: dict) -> str:
+    """사용할 토큰 슬롯 결정. ov_futopt 그룹은 고정(모의 미지원), 그 외는 페이지의 실행 환경 선택."""
+    if e["is_ov_futopt"]:
+        return "ov_futopt"
+    return "demo" if payload.get("key_kind") == "demo" else "prd"
 CATALOG = build_catalog()
 BY_ID = {e["id"]: e for e in CATALOG}
 _TOKENS: dict[str, str] = {}     # kind -> access_token (서버 메모리 캐시)
@@ -110,7 +121,7 @@ def do_oauth(e: dict, payload: dict) -> dict:
     kind = payload.get("key_kind", "prd")
     key, sec = KEYS.get(kind, ("", ""))
     if not key:
-        return {"error": f"{'해외선옵' if kind == 'ov_futopt' else '일반'} 앱키가 config.yaml 에 없습니다."}
+        return {"error": f"{KIND_NAME.get(kind, kind)} 앱키가 config.yaml 에 없습니다."}
     op = e.get("oauth")
     if op == "issue":
         data = {"grant_type": "client_credentials", "appkey": key, "appsecretkey": sec, "scope": "oob"}
@@ -118,7 +129,7 @@ def do_oauth(e: dict, payload: dict) -> dict:
     else:  # revoke
         token = (payload.get("token") or "").strip()
         if not token:
-            return {"error": f"폐기할 {'해외선옵' if kind == 'ov_futopt' else '일반'} ACCESS TOKEN 을 입력하세요.", "need_token": kind}
+            return {"error": f"폐기할 {KIND_NAME.get(kind, kind)} ACCESS TOKEN 을 입력하세요.", "need_token": kind}
         data = {"appkey": key, "appsecretkey": sec, "token_type_hint": "access_token", "token": token}
         curl = _oauth_curl(e["url"], "appkey=<APP_KEY>&appsecretkey=<APP_SECRET>&token_type_hint=access_token&token=<ACCESS_TOKEN>")
     r = _HTTP.post(f"{BASE}{e['url']}", headers={"content-type": "application/x-www-form-urlencoded"}, data=data, timeout=15)
@@ -146,12 +157,12 @@ def do_call(payload: dict) -> dict:
                 "blocked": True}
     if e["kind"] == "ws":
         return {"error": "WebSocket API 는 /ws 로 실행하세요.", "ws": True}
-    kind = "ov_futopt" if e["is_ov_futopt"] else "prd"
+    kind = req_kind(e, payload)
     # 인증: 페이지에서 입력한 access token 을 그대로 Bearer 로 사용 (key/secret 아님).
+    # REST 는 운영/모의 URL 이 동일하므로 모의투자는 demo 토큰 사용만으로 충분하다.
     token = (payload.get("token") or "").strip()
     if not token:
-        nm = "해외선옵" if kind == "ov_futopt" else "일반"
-        return {"error": f"{nm} ACCESS TOKEN 을 입력하거나 [발급] 하세요.", "need_token": kind}
+        return {"error": f"{KIND_NAME[kind]} ACCESS TOKEN 을 입력하거나 [발급] 하세요.", "need_token": kind}
     body = payload.get("body") if payload.get("body") is not None else e["body"]
     mode = payload.get("mode", "example")
     if mode == "sdk":
@@ -251,15 +262,27 @@ async def _sdk_rest(e: dict, body, token: str, kind: str) -> dict:
         return {"error": f"{type(ex).__name__}: {ex}", "used_key": kind, "mode": "sdk"}
 
 
-async def _ws_probe_sdk(e: dict, token: str) -> dict:
+def _ws_url_override(e: dict, kind: str, client) -> str | None:
+    """SDK WS URL 결정: ov_futopt 는 전용 포트, demo 는 17070, 그 외 None(=config 기본)."""
+    if e["is_ov_futopt"]:
+        return client.config.ws_url_for(e.get("group_slug"))
+    return WS_DEMO if kind == "demo" else None
+
+
+def _patch_helper_ws_url(H, kind: str) -> None:
+    """예제 경로: 모의 선택 시 helper 의 ws_url_for 를 demo URL 로 패치 (prd 면 원복)."""
+    if not hasattr(H, "_orig_ws_url_for"):
+        H._orig_ws_url_for = H.ws_url_for
+    H.ws_url_for = (lambda *a, **k: WS_DEMO) if kind == "demo" else H._orig_ws_url_for
+
+
+async def _ws_probe_sdk(e: dict, token: str, kind: str) -> dict:
     """SDK 경로: client.create_websocket() → DBSecWebSocket. 강제 드롭 후 graceful 확인."""
     from dbsec_sdk import DBSecClient
-    kind = "ov_futopt" if e["is_ov_futopt"] else "prd"
     client = DBSecClient(str(REPO / "config.yaml"))
     tm = client.token_manager
     tm._token_for_request = lambda: token; tm.get_token = lambda: token; tm.force_refresh = lambda: token
-    ws_url = client.config.ws_url_for(e.get("group_slug")) if e["is_ov_futopt"] else None
-    ws = client.create_websocket(ws_url=ws_url)
+    ws = client.create_websocket(ws_url=_ws_url_override(e, kind, client))
     msgs, errs = [], []
     ws.on_message(lambda cd, k, d: msgs.append({"tr_cd": cd, "tr_key": k, "data": d}))
     graceful = False
@@ -284,11 +307,11 @@ async def _ws_probe_sdk(e: dict, token: str) -> dict:
             "tr_cd": e.get("tr_cd"), "tr_key": e.get("tr_key"), "tr_type": e.get("tr_type")}
 
 
-async def _ws_probe_example(e: dict, token: str) -> dict:
+async def _ws_probe_example(e: dict, token: str, kind: str) -> dict:
     """Example 경로: 헬퍼 ws_subscribe + run_ws. 취소(Ctrl+C 등가)로 강제 종료."""
     import dbsec_helper as H
     H.get_token = lambda *a, **k: token          # 예제 경로 토큰 주입
-    kind = "ov_futopt" if e["is_ov_futopt"] else "prd"
+    _patch_helper_ws_url(H, kind)
     msgs, errs = [], []
     def on_msg(m):
         try: msgs.append(json.loads(m))
@@ -317,16 +340,15 @@ def do_ws(payload: dict) -> dict:
     e = BY_ID.get(payload.get("id"))
     if not e or e["kind"] != "ws":
         return {"error": "WebSocket id 가 아닙니다."}
-    kind = "ov_futopt" if e["is_ov_futopt"] else "prd"
+    kind = req_kind(e, payload)
     token = (payload.get("token") or "").strip()
     if not token:
-        nm = "해외선옵" if kind == "ov_futopt" else "일반"
-        return {"error": f"{nm} ACCESS TOKEN 을 입력하거나 [발급] 하세요.", "need_token": kind, "graceful": False}
+        return {"error": f"{KIND_NAME[kind]} ACCESS TOKEN 을 입력하거나 [발급] 하세요.", "need_token": kind, "graceful": False}
     mode = payload.get("mode", "example")
     try:
         if mode == "sdk":
-            return asyncio.run(_ws_probe_sdk(e, token))
-        return asyncio.run(_ws_probe_example(e, token))
+            return asyncio.run(_ws_probe_sdk(e, token, kind))
+        return asyncio.run(_ws_probe_example(e, token, kind))
     except Exception as ex:
         return {"error": f"{type(ex).__name__}: {ex}", "graceful": False, "mode": mode}
 
@@ -346,10 +368,11 @@ def _sse(write, event, data):
     write(f"event: {event}\ndata: {json.dumps(data, ensure_ascii=False)}\n\n")
 
 
-async def _ws_stream(e: dict, token: str, mode: str, write, tr_key=None) -> None:
+async def _ws_stream(e: dict, token: str, mode: str, write, tr_key=None, kind: str = "prd") -> None:
     """WebSocket 구독 후 수신 메시지를 SSE 로 실시간 push. Example/SDK 양쪽 지원.
 
     tr_key: 페이지에서 입력한 구독 키(종목코드 등). None 이면 카탈로그 기본값을 사용한다.
+    kind:   토큰 슬롯(prd/demo/ov_futopt). demo 면 모의투자 WS 포트(17070)로 접속한다.
     """
     key = e.get("tr_key", "") if tr_key is None else tr_key
     count = [0]; stop = asyncio.Event(); ws = None; task = None
@@ -365,6 +388,7 @@ async def _ws_stream(e: dict, token: str, mode: str, write, tr_key=None) -> None
         if mode == "example":
             import dbsec_helper as H
             H.get_token = lambda *a, **k: token
+            _patch_helper_ws_url(H, kind)
             url = H.ws_url_for(e.get("group_slug"))
 
             def on_raw(m):
@@ -381,16 +405,14 @@ async def _ws_stream(e: dict, token: str, mode: str, write, tr_key=None) -> None
             client = DBSecClient(str(REPO / "config.yaml"))
             tm = client.token_manager
             tm._token_for_request = lambda: token; tm.get_token = lambda: token; tm.force_refresh = lambda: token
-            ws_url = client.config.ws_url_for(e.get("group_slug")) if e["is_ov_futopt"] else None
-            ws = client.create_websocket(ws_url=ws_url)
+            ws = client.create_websocket(ws_url=_ws_url_override(e, kind, client))
             ws.on_message(emit)
             await ws.connect()
             await ws.add_realtime(e.get("tr_cd", ""), key, tr_type=e.get("tr_type", "1"))
             url = ws._url
             task = asyncio.create_task(ws.run())
 
-        _sse(write, "opened", {"url": url, "mode": mode,
-                               "used_key": "ov_futopt" if e["is_ov_futopt"] else "prd",
+        _sse(write, "opened", {"url": url, "mode": mode, "used_key": kind,
                                "tr_cd": e.get("tr_cd"), "tr_key": key, "tr_type": e.get("tr_type")})
 
         loop = asyncio.get_event_loop(); start = loop.time()
@@ -466,6 +488,7 @@ class Handler(BaseHTTPRequestHandler):
         token = (q.get("token", [""])[0] or "").strip()
         mode = q.get("mode", ["example"])[0] or "example"
         tr_key = q.get("tr_key", [None])[0]   # 없으면 카탈로그 기본값, 있으면(빈값 포함) 입력값 사용
+        key_kind = q.get("key_kind", [""])[0]
         self.send_response(200)
         self.send_header("Content-Type", "text/event-stream; charset=utf-8")
         self.send_header("Cache-Control", "no-cache")
@@ -482,7 +505,7 @@ class Handler(BaseHTTPRequestHandler):
         if not token:
             return _sse(write, "err", {"error": "ACCESS TOKEN 이 필요합니다."})
         try:
-            asyncio.run(_ws_stream(e, token, mode, write, tr_key))
+            asyncio.run(_ws_stream(e, token, mode, write, tr_key, req_kind(e, {"key_kind": key_kind})))
         except Exception as ex:
             try: _sse(write, "err", {"error": f"{type(ex).__name__}: {ex}"})
             except Exception: pass

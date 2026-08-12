@@ -307,6 +307,7 @@ def build_catalog() -> list[dict]:
                 e["out_text"] = _dedash(api.out_text)  # OUT_BEGIN~OUT_END 원문 (폴백용)
                 e["out_blocks"], e["out_common"] = _parse_out_blocks(api.out_text)
                 e["tr_code"] = api.tr_code or e.get("tr_cd") or ""
+                e["demo"] = api.demo                  # 모의투자 지원 여부 (matrix, True/False/None)
     except Exception as ex:
         print(f"[catalog] In/Out 명세 보강 생략: {type(ex).__name__}: {ex}", file=sys.stderr)
     return out
