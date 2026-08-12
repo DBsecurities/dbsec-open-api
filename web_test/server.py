@@ -11,7 +11,7 @@
 토큰/키는 config.yaml 에서 읽는다(서버에만 존재, 페이지로 평문 전송 안 함).
 """
 from __future__ import annotations
-import io, os, sys, json, threading, asyncio, pathlib, subprocess
+import io, os, sys, json, time, threading, asyncio, pathlib, subprocess
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -169,6 +169,9 @@ def do_call(payload: dict) -> dict:
         # SDK 경로: client.apis.<group>.<method>(**평탄화된 In* 필드)
         # 상주 루프 + 캐시된 클라이언트 사용 (매 호출 클라이언트 생성 오버헤드 제거)
         return _sdk_run(_sdk_rest(e, body, token, kind))
+    if e.get("paged"):
+        # 페이징 예제: call_rest_paged 와 동일한 연속조회 루프 (SDK 경로의 max_pages=3 과 동일 상한)
+        return _rest_paged_example(e, body, token, kind)
     # Example 경로(기본): 예제 call_rest 와 동일하게 전체 body 를 raw POST.
     url = f"{BASE}{e['url']}"
     headers = {"content-type": "application/json; charset=utf-8",
@@ -182,6 +185,54 @@ def do_call(payload: dict) -> dict:
     rsp_msg = (data.get("rsp_msg") or data.get("message") or data.get("msg") or "") if isinstance(data, dict) else ""
     return {"status": r.status_code, "rsp_cd": str(rsp_cd), "rsp_msg": str(rsp_msg),
             "json": data, "used_key": kind, "mode": "example",
+            "curl": build_curl(e["url"], body, kind)}
+
+
+def _rest_paged_example(e: dict, body, token: str, kind: str,
+                        max_pages: int = 3, page_sleep: float = 0.5) -> dict:
+    """연속조회(페이징) Example 경로 - dbsec_helper.call_rest_paged 와 동일한 프로토콜.
+
+    응답 헤더 cont_yn=='Y' 인 동안 cont_key 를 패스스루하며 반복 호출한다.
+    페이지 간 page_sleep 대기(TPS 안전선), 무진행 가드(cont_key 미변경 시 중단),
+    max_pages 상한(SDK 경로의 fetch_all·max_pages=3 과 동일)을 적용한다.
+    """
+    url = f"{BASE}{e['url']}"
+    base_headers = {"content-type": "application/json; charset=utf-8",
+                    "authorization": f"Bearer {token}"}
+    pages, note, more = [], "", False
+    cur_yn, cur_key = "N", ""
+    r, data = None, None
+    for page_no in range(1, max_pages + 1):
+        r = _HTTP.post(url, headers={**base_headers, "cont_yn": cur_yn, "cont_key": cur_key},
+                       json=body, timeout=30)
+        try:
+            data = r.json()
+        except Exception:
+            data = {"raw": r.text[:2000]}
+        pages.append(data)
+        if r.status_code != 200:
+            break
+        next_yn = r.headers.get("cont_yn", "N")
+        next_key = r.headers.get("cont_key", "")
+        if next_yn != "Y":
+            break
+        if not next_key or next_key == cur_key:     # 무진행 가드 (무한루프 방지)
+            note = "서버가 cont_yn='Y' 이나 cont_key 무진행 - 중단"
+            break
+        if page_no >= max_pages:
+            more = True                              # 상한 도달, 데이터 더 남음
+            cur_key = next_key
+            break
+        cur_yn, cur_key = "Y", next_key
+        time.sleep(page_sleep)
+    rsp_cd = (data.get("rsp_cd") or data.get("code") or "") if isinstance(data, dict) else ""
+    rsp_msg = (data.get("rsp_msg") or data.get("message") or data.get("msg") or "") if isinstance(data, dict) else ""
+    return {"status": r.status_code if r is not None else None,
+            "rsp_cd": str(rsp_cd), "rsp_msg": str(rsp_msg),
+            "json": pages if len(pages) > 1 else (pages[0] if pages else None),
+            "used_key": kind, "mode": "example",
+            "paged": {"pages": len(pages), "more": more, "max_pages": max_pages,
+                      "next_cont_key": cur_key if more else "", "note": note},
             "curl": build_curl(e["url"], body, kind)}
 
 
@@ -252,8 +303,16 @@ async def _sdk_rest(e: dict, body, token: str, kind: str) -> dict:
     fn = getattr(getattr(client.apis, e["group"]), e["method"])
     try:
         resp = await fn(**kwargs)
-        return {"status": resp.status_code, "rsp_cd": str(resp.rsp_cd or ""),
-                "rsp_msg": str(resp.rsp_msg or ""), "json": resp.body, "used_key": kind, "mode": "sdk"}
+        out = {"status": resp.status_code, "rsp_cd": str(resp.rsp_cd or ""),
+               "rsp_msg": str(resp.rsp_msg or ""), "json": resp.body, "used_key": kind, "mode": "sdk"}
+        if e.get("paged"):
+            # fetch_all 병합 응답: resp.pages=페이지별 원본 목록, has_more/cont_key=마지막 페이지 헤더
+            more = bool(resp.has_more)
+            out["paged"] = {"pages": len(resp.pages) if resp.pages else 1, "more": more,
+                            "max_pages": kwargs.get("max_pages", 3),
+                            "next_cont_key": resp.cont_key if more else "",
+                            "note": "페이지 본문 병합됨 (list 블록 이어붙임)"}
+        return out
     except APIError as ex:
         # SDK 는 업무에러(non-ok rsp_cd)를 예외로 표면화한다 — 그대로 보여준다.
         return {"status": getattr(ex, "status_code", None), "rsp_cd": str(getattr(ex, "rsp_cd", "") or ""),

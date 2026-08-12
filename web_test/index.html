@@ -303,7 +303,8 @@ function pySnippet(e, body){
   if(e.paged) lines.push("    fetch_all=True, max_pages=3");
   const inner=lines.length?"\n"+lines.join(",\n")+"\n":"";
   const demoNote=(!e.is_ov_futopt&&curTokenKind()==='demo')?`# 모의투자: config.yaml environment.mode = "demo" (vtl 앱키로 토큰 발급)\n`:"";
-  return `${demoNote}resp = await client.apis.${e.group}.${e.method}(${inner})\nprint(resp.status_code, resp.rsp_cd)\nprint(resp.body)`;
+  const pagedNote=e.paged?`# 연속조회: 응답 헤더 cont_yn=Y 인 동안 cont_key 를 이어받아\n# cont_yn=Y 로 반복 호출 (웹테스터는 최대 3페이지 자동 수행)\n`:"";
+  return `${demoNote}${pagedNote}resp = await client.apis.${e.group}.${e.method}(${inner})\nprint(resp.status_code, resp.rsp_cd)\nprint(resp.body)`;
 }
 function renderCode2(e, body){
   const isWs=e.kind==='ws';
@@ -472,11 +473,19 @@ function curlHtml(e, body){
       `  body:   { tr_cd:<span class="c-str">"${esc(e.tr_cd)}"</span>, tr_key:<span class="c-str">"${esc(e.tr_key||'')}"</span> }`;
   }
   const b=JSON.stringify(body);
+  const contHdr = e.paged
+    ? `     <span class="c-flag">--header</span> <span class="c-str">'cont_yn: N'</span> \\\n`+
+      `     <span class="c-flag">--header</span> <span class="c-str">'cont_key: '</span> \\\n`
+    : '';
+  const contNote = e.paged
+    ? `\n\n<span style="color:var(--muted)"># 연속조회: 응답 헤더 cont_yn=Y 인 동안 cont_key 를 이어받아\n# cont_yn=Y 로 반복 호출 (웹테스터는 최대 3페이지 자동 수행)</span>`
+    : '';
   return `<span class="c-cmd">curl</span> <span class="c-flag">--request</span> POST \\\n`+
     `     <span class="c-flag">--url</span> <span class="c-url">'${esc(BASEURL)}${esc(e.url)}'</span> \\\n`+
     `     <span class="c-flag">--header</span> <span class="c-str">'content-type: application/json'</span> \\\n`+
     `     <span class="c-flag">--header</span> <span class="c-str">'authorization: Bearer &lt;${curTokenKind().toUpperCase()}_TOKEN&gt;'</span> \\\n`+
-    `     <span class="c-flag">--data</span> <span class="c-str">'${esc(b)}'</span>`;
+    contHdr+
+    `     <span class="c-flag">--data</span> <span class="c-str">'${esc(b)}'</span>`+contNote;
 }
 
 function main(){
@@ -717,6 +726,7 @@ function renderResp(j){
      <span class="pill ${ok?'ok':'bad'}"><span class="d"></span>${j.status==null?'-':j.status}</span>
      <span>rsp_cd=<b>${esc(j.rsp_cd||'-')}</b> ${esc(j.rsp_msg||'')}</span>
      <span style="margin-left:auto;color:var(--muted)">${esc((j.mode||'').toUpperCase())} · key: ${esc(j.used_key)}</span></div>
+   ${j.paged?`<div class="kv">연속조회 <b>${j.paged.pages}페이지</b> 수신${j.paged.more?` · 상한(${j.paged.max_pages}페이지) 도달 - 데이터 더 있음 (다음 cont_key: ${esc(j.paged.next_cont_key)})`:' · 전체 수신 완료'}${j.paged.note?` · ${esc(j.paged.note)}`:''}</div>`:''}
    ${j.sdk_raises?`<div class="kv" style="color:var(--blue)">ⓘ SDK 는 업무 에러코드를 <b>${esc(j.sdk_raises)}</b> 예외로 표면화합니다 (예제/raw 경로는 본문을 그대로 반환).</div>`:''}
    <pre class="code" style="border-radius:9px;max-height:380px">${esc(JSON.stringify(shown,null,2))}</pre>`;
 }
