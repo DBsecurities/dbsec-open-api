@@ -53,7 +53,7 @@ if TYPE_CHECKING:
     from dbsec_sdk.auth import TokenManager
     from dbsec_sdk.config import Config
 
-from dbsec_sdk.exceptions import WebSocketError, RateLimitError, lookup_error
+from dbsec_sdk.exceptions import WebSocketError, RateLimitError
 from dbsec_sdk.rate_limiter import AsyncRateLimiter
 
 logger = logging.getLogger(__name__)
@@ -75,7 +75,7 @@ _TR_TYPE_UNSUBSCRIBE = "2"  # 일반 시세 구독 해제
 _TR_TYPE_ACCOUNT = "3"      # 계좌 단위 등록 (해제 메시지 없음)
 _REGISTER_TR_TYPES = frozenset({_TR_TYPE_SUBSCRIBE, _TR_TYPE_ACCOUNT})
 
-# WebSocket 서버 오류코드별 해결 힌트 (코드→원인 메시지는 exceptions.lookup_error 가 제공)
+# WebSocket 서버 오류코드별 해결 힌트 (원인 메시지는 서버 rsp_msg 가 정본)
 _WS_ERROR_HINTS = {
     "10004": "구독 메시지의 tr_cd 값을 확인하세요 (예: S00 체결가, S01 호가).",
     "10005": "해당 tr_cd 는 현재 모드(운영/모의)에서 허용되지 않습니다 — 모의투자 미지원 TR 인지 확인하세요.",
@@ -433,11 +433,8 @@ class DBSecWebSocket:
         rsp_cd = str(header.get("rsp_cd") or body.get("rsp_cd") or "")
         rsp_msg = str(header.get("rsp_msg") or body.get("rsp_msg") or "")
         if rsp_cd or rsp_msg:
-            known = lookup_error(rsp_cd)        # exceptions.py 의 오류코드표 조회
             hint = _WS_ERROR_HINTS.get(rsp_cd, "")
-            msg = f"WebSocket 서버 응답 [rsp_cd={rsp_cd or '-'}] {rsp_msg or known or '(메시지 없음)'}"
-            if known and known not in (rsp_msg, ""):
-                msg += f" — {known}"
+            msg = f"WebSocket 서버 응답 [rsp_cd={rsp_cd or '-'}] {rsp_msg or '(메시지 없음)'}"
             if hint:
                 msg += f"\n  ↳ 해결: {hint}"
             elif rsp_cd not in ("", "0", "00000"):

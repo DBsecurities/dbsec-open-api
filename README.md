@@ -728,11 +728,6 @@ SDK 가 호출 직전에 **2-tier 유량제어**(앱 20TPS + 엔드포인트별 
 | 토큰 발급/폐기 | 1 TPM | 파일 캐시(24h 재사용)로 사실상 회피 |
 | WebSocket 세션 / 종목 | 2세션 / 세션당 50종목 | 50종목 초과 시 `RateLimitError` |
 
-```python
-from dbsec_sdk.exceptions import lookup_error
-print(lookup_error("IGW00123"))   # "기간이 만료된 token입니다."
-```
-
 ---
 
 ## 부록 - API 모의투자 지원 현황

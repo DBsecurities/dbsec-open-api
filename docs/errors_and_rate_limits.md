@@ -189,14 +189,8 @@ DB증권 Open API 사용 시 접할 수 있는 오류코드와 유량제어 정�
 
 ---
 
-### 오류 메시지 조회 유틸
-
-```python
-from dbsec_sdk.exceptions import lookup_error
-print(lookup_error('IGW00123'))   # "기간이 만료된 token입니다."
-```
-
-> 전체 오류코드는 `dbsec_sdk/exceptions.py` 참조.
+> 같은 응답코드가 상황에 따라 여러 메시지로 재사용될 수 있습니다(예: `3139`, `3735`, `M100`).
+> 오류 원인 판단은 항상 서버가 함께 내려주는 `rsp_msg` 원문을 기준으로 하세요.
 
 ---
 
