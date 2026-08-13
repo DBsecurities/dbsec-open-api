@@ -120,11 +120,9 @@
   .list{overflow:auto;flex:1;padding:4px 8px 24px}
   /* ── API 목록 (Korbit 스타일: 도메인 대제목 → 소그룹 → 한글명 + 우측 색 뱃지) ── */
   .domh{font-size:15px;font-weight:800;color:var(--title);padding:18px 8px 2px;letter-spacing:-.2px}
-  .grp{display:flex;align-items:center;gap:6px;color:var(--head);font-size:12.5px;font-weight:600;
-    padding:10px 8px 3px;cursor:pointer;user-select:none}
-  .grp:hover{color:var(--text)}
-  .grp .caret{font-size:9px;width:9px;flex:none;color:var(--muted)}
-  .grp .gcount{margin-left:auto;color:var(--muted);font-weight:400}
+  .grp{display:flex;align-items:center;gap:6px;color:var(--head);font-size:14px;font-weight:600;
+    margin:6px 0 0;padding:5px 10px;border-radius:7px;cursor:pointer;user-select:none}
+  .grp:hover{background:var(--sel-bg);color:var(--text)}
   .item{display:flex;align-items:center;justify-content:space-between;gap:8px;
     margin-left:8px;padding:7px 10px;border-radius:7px;cursor:pointer}
   .item:hover{background:var(--sel-bg)}
@@ -364,10 +362,8 @@ function render(){
     if(e.group!==grp){
       grp=e.group;
       hidden=!searching && COLLAPSED.has(e.group);
-      const cnt=items.filter(x=>x.group===e.group).length;
-      html+=`<div class="grp" onclick="toggleGroup('${e.group}')">
-        <span class="caret">${hidden?'▸':'▾'}</span>${esc(SUB_OF(e.group))}
-        <span class="gcount">${cnt}</span></div>`;
+      html+=`<div class="grp${hidden?' collapsed':''}" onclick="toggleGroup('${e.group}')">
+        ${esc(SUB_OF(e.group))}</div>`;
     }
     if(hidden) continue;
     const bk=e.oauth?'oauth':e.kind;
