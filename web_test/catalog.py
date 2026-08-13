@@ -272,7 +272,23 @@ def build_catalog() -> list[dict]:
         "common", "ws_common",                                                 # 공통
     ]
     _rank = {g: i for i, g in enumerate(_GROUP_ORDER)}
-    out.sort(key=lambda e: (_rank.get(e["group"], len(_GROUP_ORDER)), e["kind"], e["method"]))
+
+    def _method_rank(e):
+        # 주문 API 는 알파벳순 대신 업무 순서로: 종합/매수 → 매도 → 정정(modify) → 취소(cancel).
+        # 기본 시장 먼저, 변형 시장(_nxt·_night)은 같은 순서로 그 뒤에. 그 외 kind 는 알파벳순 유지.
+        if e["kind"] != "order":
+            return (0, 0, e["method"])
+        m = base = e["method"]
+        variant = 0
+        for suf in ("_nxt", "_night"):
+            if base.endswith(suf):
+                base, variant = base[:-len(suf)], 1
+                break
+        action = base.split("_order", 1)[1].lstrip("_") if "_order" in base else ""
+        act = {"": 0, "buy": 0, "sell": 1, "modify": 2, "cancel": 3}.get(action, 99)
+        return (variant, act, m)
+
+    out.sort(key=lambda e: (_rank.get(e["group"], len(_GROUP_ORDER)), e["kind"], *_method_rank(e)))
 
     # ── In/Out 명세 보강 — MCP 카탈로그 파서 재사용 ──
     # 요청(In)은 예제 본문의 인라인 주석, 응답(Out)은 docstring OUT 섹션에서 추출된다.
