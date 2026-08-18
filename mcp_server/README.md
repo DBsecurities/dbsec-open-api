@@ -35,6 +35,28 @@ TR코드가 여러 그룹에 중복되면(예: `HOGA`) 후보 목록을 돌려�
 
 ---
 
+## Claude Desktop 원클릭 설치 (MCPB)
+
+Claude Desktop(맥/윈도) 사용자는 저장소 클론·의존성 설치·JSON 편집 없이 파일 하나로 설치할 수 있습니다.
+
+1. [`dbsec-code-assistant.mcpb`](dbsec-code-assistant.mcpb) 를 내려받습니다
+   (GitHub 웹에서 파일 클릭 후 우측 상단 **Download raw file**).
+2. Claude Desktop 창에 파일을 끌어다 놓거나 더블클릭 → 설치 대화상자에서 확인하면 끝.
+
+동작 방식:
+
+- **Python 3.10+ 가 필요합니다** (Claude Desktop 은 Node 만 내장). 첫 실행 시 사용자 폴더
+  (`%LOCALAPPDATA%\dbsec-mcpb`)에 전용 가상환경을 만들고 의존성을 설치합니다
+  (1회, 네트워크 필요, 약 1분 - 이후 재사용).
+- `git` 이 있으면 기동 때마다 이 저장소를 자동 clone/fetch 해 **스펙을 항상 최신**으로 유지하고,
+  git 이 없거나 오프라인이면 **번들에 내장된 스펙 스냅샷**으로 동작합니다 (fail-soft).
+- 이미 저장소를 clone 해 둔 경우, 설치 시 설정 화면에서 그 경로를 지정하면 해당 사본을
+  사용·동기화합니다 (선택사항).
+
+아래 섹션들은 저장소를 직접 clone 해서 쓰는 개발자·타 클라이언트(Claude Code · Cursor 등) 경로입니다.
+
+---
+
 ## 설치
 
 ```bash
@@ -139,7 +161,8 @@ mcp_server/
 ├── catalog.py    # examples/*.py(docstring·In주석) + api_support_matrix.md 파싱 인덱스
 ├── server.py     # FastMCP 인스턴스 + 5개 tool + 1개 resource
 ├── requirements.txt
-└── pyproject.toml
+├── pyproject.toml
+└── dbsec-code-assistant.mcpb  # Claude Desktop 원클릭 설치 번들(MCPB)
 ```
 
 명세의 원본은 `examples/` 이므로, API 가 추가·변경되면 **해당 예제 파일을 직접 수정**하면 됩니다.

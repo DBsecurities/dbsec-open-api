@@ -236,6 +236,12 @@ MCP 가 그대로 반영**합니다(별도 명세 캐시에 의존하지 않음)
 | `get_sample_code(identifier)` | 해당 API 의 파이썬 샘플코드 원문 |
 | `get_setup_guide()` | 설치·설정·토큰 발급·실행 시작 가이드 |
 
+**Claude Desktop 사용자는 원클릭 설치를 권장합니다** - [`mcp_server/dbsec-code-assistant.mcpb`](mcp_server/dbsec-code-assistant.mcpb)
+파일 하나를 내려받아 Claude Desktop 창에 끌어다 놓으면(또는 더블클릭) 설치가 끝납니다.
+Python 3.10+ 필요, 첫 실행 시 자동 초기화. 상세: [mcp_server/README.md](mcp_server/README.md)
+
+그 외 클라이언트(Claude Code · Cursor 등)·수동 등록:
+
 ```bash
 pip install -r mcp_server/requirements.txt
 python mcp_server/run_server.py                              # 저장소 루트에서 (로컬)
@@ -369,7 +375,8 @@ dbsec-open-api/
 │   ├── run_server.py                       #   진입점(cwd 무관): sync→인덱싱→서버 기동
 │   ├── sync.py                             #   GitHub 강제 동기화 fetch+reset (commit/push 없음)
 │   ├── catalog.py                          #   examples + api_support_matrix.md 파싱 인덱스
-│   └── server.py                           #   FastMCP tools (list/search/spec/sample/guide)
+│   ├── server.py                           #   FastMCP tools (list/search/spec/sample/guide)
+│   └── dbsec-code-assistant.mcpb           #   Claude Desktop 원클릭 설치 번들(MCPB)
 │
 ├── web_test/                               # 웹 API 테스터 (python web_test/server.py → http://127.0.0.1:8765)
 │   ├── server.py                           #   로컬 프록시 - 토큰 발급·REST 대리 호출·WS 실시간 스트림(SSE)
