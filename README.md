@@ -101,7 +101,7 @@
 1. **DB증권 계좌 개설** - [비대면 계좌개설](https://www.dbsec.co.kr/custcenter/account/cu_NonfaceBranch_viw.do)
 2. **Open API 사용 신청** - DB증권 홈페이지 -> OpenAPI 서비스 신청 메뉴(https://www.dbsec.co.kr/online/accservice/on_OpenApi_wrk00.do) 에서 신청
 3. **APP_KEY / APP_SECRET 발급** - 신청 완료 후 발급
-4. 모의투자 OpenAPI 앱 신청 전 **모의투자 신청** 필수 - DB증권 홈페이지 -> 모의투자 -> 상시모의투자 신청 메뉴(https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do) 에서 신청 
+4. 모의투자 OpenAPI 앱 신청 전 **모의투자 신청** 필수 - DB증권 홈페이지 -> 모의투자 -> 상시모의투자 신청 메뉴(https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do) 또는 MTS -> 국내주식/해외주식 -> 모의투자 -> 상시모의투자 신청 메뉴에서 신청 
 5. **Python 3.10 이상** 설치
 
 ---
@@ -285,9 +285,9 @@ python web_test/server.py   # → http://127.0.0.1:8765 (브라우저로 열기)
 
 ## 모의투자 OpenAPI 신청 안내
 
-OpenAPI 모의투자 서비스를 신청하기 전에, **DB증권 홈페이지에서 상시모의투자 참가신청**이 먼저 필요합니다.
+OpenAPI 모의투자 서비스를 신청하기 전에, **상시모의투자 참가신청**(홈페이지 또는 MTS)이 먼저 필요합니다.
 
-> 신청 순서: 상시모의투자 참가신청(홈페이지) → 모의투자 계좌 발급 → OpenAPI 모의투자 서비스 신청
+> 신청 순서: 상시모의투자 참가신청(홈페이지/MTS) → 모의투자 계좌 발급 → OpenAPI 모의투자 서비스 신청
 
 ### 모의투자 신청가능 상품
 
@@ -297,10 +297,13 @@ OpenAPI 모의투자 서비스를 신청하기 전에, **DB증권 홈페이지�
 
 ### 1. 상시모의투자 참가신청
 
-- 신청 위치: DB증권 홈페이지 → **주식/선물옵션 > 모의투자 > 상시모의투자**
-- 바로가기: [상시모의투자 신청 페이지](https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do)
+홈페이지 또는 MTS 중 편한 경로에서 신청할 수 있습니다.
 
-해당 페이지에서 상시모의투자 참가신청을 완료하면, **모의투자전용 계좌**가 발급됩니다.
+- 홈페이지: DB증권 홈페이지 → **주식/선물옵션 > 모의투자 > 상시모의투자**
+  - 바로가기: [상시모의투자 신청 페이지](https://www.dbsec.co.kr/custcenter/vts/vts_Index_viw02.do)
+- MTS: **국내주식 또는 해외주식 > 모의투자 > 상시모의투자 신청**
+
+상시모의투자 참가신청을 완료하면, **모의투자전용 계좌**가 발급됩니다.
 
 ### 2. OpenAPI 모의투자 서비스 신청
 
